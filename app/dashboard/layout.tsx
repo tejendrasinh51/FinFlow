@@ -16,7 +16,6 @@ export default function DashboardLayout({
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-        currentRole="admin"
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />

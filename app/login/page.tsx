@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { TrendingUp, Eye, EyeOff, ArrowRight, Lock, Mail, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { TrendingUp, Eye, EyeOff, ArrowRight, Lock, Mail, AlertCircle, CheckCircle2, Building, Send } from 'lucide-react'
+import { Modal } from '@/components/ui/Modal'
 
 // Demo accounts for testing (no backend needed)
 const DEMO_ACCOUNTS = [
@@ -22,25 +23,80 @@ export default function LoginPage() {
   const [error, setError]       = useState('')
   const [success, setSuccess]   = useState(false)
 
+  // Parse URL query parameter safely on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('request') === 'true') {
+        setRequestOpen(true)
+      }
+    }
+  }, [])
+
+  // Request Access modal state
+  const [requestOpen, setRequestOpen] = useState(false)
+  const [requestName, setRequestName] = useState('')
+  const [requestEmail, setRequestEmail] = useState('')
+  const [requestOrg, setRequestOrg] = useState('')
+  const [requestNote, setRequestNote] = useState('')
+  const [requestLoading, setRequestLoading] = useState(false)
+  const [requestSuccess, setRequestSuccess] = useState(false)
+  const [requestError, setRequestError] = useState('')
+
+  const handleRequestAccess = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setRequestError('')
+    setRequestLoading(true)
+
+    try {
+      const res = await fetch('/api/auth/request-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: requestName,
+          email: requestEmail,
+          orgName: requestOrg,
+          note: requestNote,
+        }),
+      })
+
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setRequestSuccess(true)
+      } else {
+        setRequestError(data.error || 'Failed to submit application. Please try again.')
+      }
+    } catch (err) {
+      setRequestError('Connection failed. Verify server status.')
+    } finally {
+      setRequestLoading(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
 
-    // Simulate network delay
-    await new Promise(r => setTimeout(r, 900))
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
 
-    const account = DEMO_ACCOUNTS.find(
-      a => a.email === email && a.password === password
-    )
-
-    if (account) {
-      setSuccess(true)
-      await new Promise(r => setTimeout(r, 600))
-      router.push('/dashboard')
-    } else {
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setSuccess(true)
+        await new Promise(r => setTimeout(r, 600))
+        router.push('/dashboard')
+      } else {
+        setLoading(false)
+        setError(data.error || 'Invalid email or password. Try a demo account below.')
+      }
+    } catch (err) {
       setLoading(false)
-      setError('Invalid email or password. Try a demo account below.')
+      setError('Connection failed. Verify database and Redis server statuses.')
     }
   }
 
@@ -332,10 +388,165 @@ export default function LoginPage() {
 
           <p className="text-text-tertiary text-xs text-center mt-6 font-mono">
             No account?{' '}
-            <a href="#demo" className="text-cyan hover:underline">Request access →</a>
+            <button
+              type="button"
+              onClick={() => setRequestOpen(true)}
+              className="text-cyan hover:underline bg-transparent border-0 p-0 cursor-pointer font-mono inline"
+            >
+              Request access →
+            </button>
           </p>
         </motion.div>
       </div>
+
+      {/* Request Access Modal */}
+      <Modal
+        open={requestOpen}
+        onClose={() => {
+          setRequestOpen(false)
+          if (requestSuccess) {
+            setRequestName('')
+            setRequestEmail('')
+            setRequestOrg('')
+            setRequestNote('')
+            setRequestSuccess(false)
+            setRequestError('')
+          }
+        }}
+        title="Request Workspace Access"
+      >
+        {requestSuccess ? (
+          <div className="text-center py-6">
+            <div className="w-12 h-12 rounded-full bg-positive/10 border border-positive/20 flex items-center justify-center mx-auto mb-4 animate-bounce">
+              <CheckCircle2 size={24} className="text-positive" />
+            </div>
+            <h3 className="font-display font-semibold text-lg text-text-primary mb-2">
+              Application Submitted
+            </h3>
+            <p className="text-text-secondary text-sm max-w-sm mx-auto mb-6 leading-relaxed">
+              Thank you for requesting access! Administrators have been notified, and we will follow up with you via email.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setRequestOpen(false)
+                setRequestName('')
+                setRequestEmail('')
+                setRequestOrg('')
+                setRequestNote('')
+                setRequestSuccess(false)
+                setRequestError('')
+              }}
+              className="btn-primary px-6 py-2.5 mx-auto text-sm"
+            >
+              Close
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleRequestAccess} className="space-y-4">
+            <p className="text-text-secondary text-xs leading-relaxed mb-4">
+              Submit your details to request access to the FinFlow Analytics enterprise dashboard. A site administrator will review and authorize your workspace.
+            </p>
+
+            {/* Name */}
+            <div>
+              <label htmlFor="req-name" className="block text-text-secondary text-xs font-mono uppercase tracking-wider mb-2">
+                Full Name
+              </label>
+              <input
+                id="req-name"
+                type="text"
+                value={requestName}
+                onChange={e => setRequestName(e.target.value)}
+                placeholder="Alex Carter"
+                required
+                className="w-full px-4 py-2.5 bg-surface border border-[var(--color-border)] rounded-lg text-text-primary placeholder:text-text-tertiary font-mono text-sm focus:outline-none focus:border-cyan/50 focus:ring-2 focus:ring-cyan/10 transition-all"
+              />
+            </div>
+
+            {/* Email */}
+            <div>
+              <label htmlFor="req-email" className="block text-text-secondary text-xs font-mono uppercase tracking-wider mb-2">
+                Work Email
+              </label>
+              <input
+                id="req-email"
+                type="email"
+                value={requestEmail}
+                onChange={e => setRequestEmail(e.target.value)}
+                placeholder="alex@company.com"
+                required
+                className="w-full px-4 py-2.5 bg-surface border border-[var(--color-border)] rounded-lg text-text-primary placeholder:text-text-tertiary font-mono text-sm focus:outline-none focus:border-cyan/50 focus:ring-2 focus:ring-cyan/10 transition-all"
+              />
+            </div>
+
+            {/* Organization */}
+            <div>
+              <label htmlFor="req-org" className="block text-text-secondary text-xs font-mono uppercase tracking-wider mb-2">
+                Organization Name
+              </label>
+              <div className="relative">
+                <Building size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary" />
+                <input
+                  id="req-org"
+                  type="text"
+                  value={requestOrg}
+                  onChange={e => setRequestOrg(e.target.value)}
+                  placeholder="Acme Corp"
+                  required
+                  className="w-full pl-10 pr-4 py-2.5 bg-surface border border-[var(--color-border)] rounded-lg text-text-primary placeholder:text-text-tertiary font-mono text-sm focus:outline-none focus:border-cyan/50 focus:ring-2 focus:ring-cyan/10 transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Additional Note */}
+            <div>
+              <label htmlFor="req-note" className="block text-text-secondary text-xs font-mono uppercase tracking-wider mb-2">
+                Note to Administrator (Optional)
+              </label>
+              <textarea
+                id="req-note"
+                value={requestNote}
+                onChange={e => setRequestNote(e.target.value)}
+                placeholder="Tell us about your team and use-case..."
+                rows={3}
+                className="w-full px-4 py-2.5 bg-surface border border-[var(--color-border)] rounded-lg text-text-primary placeholder:text-text-tertiary font-mono text-sm focus:outline-none focus:border-cyan/50 focus:ring-2 focus:ring-cyan/10 transition-all resize-none"
+              />
+            </div>
+
+            {/* Error Message */}
+            {requestError && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-negative/10 border border-negative/20 text-negative text-sm">
+                <AlertCircle size={15} className="flex-shrink-0" />
+                {requestError}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setRequestOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={requestLoading}
+                className="btn-primary px-5 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              >
+                {requestLoading ? 'Submitting...' : (
+                  <>
+                    Submit Request
+                    <Send size={14} className="ml-1.5" />
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+      </Modal>
     </div>
   )
 }

@@ -107,24 +107,59 @@ const cardVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 }
 
+import { useMetrics } from '@/hooks/useMetrics'
+
 export default function DashboardPage() {
+  const { liveValues, isLive, isLoading: metricsLoading } = useMetrics({
+    types: ['mrr', 'arr', 'churn', 'dau'],
+  })
+  
   const [loading, setLoading] = useState(true)
   const [updatedMetric, setUpdatedMetric] = useState<number | null>(null)
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 800)
+    const t = setTimeout(() => setLoading(false), 500)
     return () => clearTimeout(t)
   }, [])
 
-  // Simulate real-time updates
+  // Highlight updated card when live values fluctuate
   useEffect(() => {
-    const interval = setInterval(() => {
-      const idx = Math.floor(Math.random() * metrics.length)
-      setUpdatedMetric(idx)
-      setTimeout(() => setUpdatedMetric(null), 1000)
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [])
+    if (Object.keys(liveValues).length === 0) return
+    // Flash a random updated metric card indicator
+    const idx = Math.floor(Math.random() * metrics.length)
+    setUpdatedMetric(idx)
+    const t = setTimeout(() => setUpdatedMetric(null), 800)
+    return () => clearTimeout(t)
+  }, [liveValues])
+
+  const displayMetrics = metrics.map((m, i) => {
+    const typeMap: Record<string, string> = {
+      'MRR': 'mrr',
+      'ARR': 'arr',
+      'Churn Rate': 'churn',
+      'DAU': 'dau',
+    }
+    const key = typeMap[m.title]
+    const liveValue = liveValues[key]
+    
+    let formattedVal = m.value
+    if (liveValue !== undefined) {
+      if (key === 'churn') {
+        formattedVal = liveValue.toFixed(1)
+      } else if (key === 'mrr') {
+        formattedVal = liveValue >= 1000000 ? `${(liveValue / 1000000).toFixed(2)}M` : `${(liveValue / 1000).toFixed(0)}K`
+      } else if (key === 'arr') {
+        formattedVal = liveValue >= 1000000 ? `${(liveValue / 1000000).toFixed(1)}M` : `${(liveValue / 1000).toFixed(0)}K`
+      } else if (key === 'dau') {
+        formattedVal = Math.round(liveValue).toLocaleString()
+      }
+    }
+    
+    return {
+      ...m,
+      value: formattedVal,
+    }
+  })
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-6">
@@ -132,9 +167,12 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display font-bold text-2xl text-text-primary">Executive Overview</h1>
-          <p className="text-text-secondary text-sm font-mono mt-1">
-            Real-time · Updated just now
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className={isLive ? "live-dot" : "w-2 h-2 rounded-full bg-neutral animate-pulse inline-block"} />
+            <p className="text-text-secondary text-sm font-mono">
+              {isLive ? 'Real-time WebSocket stream active' : 'Offline · Reconnecting...'}
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button className="btn-ghost text-sm py-2 px-4 flex items-center gap-2">
@@ -158,11 +196,11 @@ export default function DashboardPage() {
         animate="show"
         className="grid grid-cols-2 xl:grid-cols-4 gap-4"
       >
-        {metrics.map((m, i) => (
+        {displayMetrics.map((m, i) => (
           <motion.div key={m.title} variants={cardVariants}>
             <MetricCard
               {...m}
-              loading={loading}
+              loading={loading || metricsLoading}
               updated={updatedMetric === i}
             />
           </motion.div>

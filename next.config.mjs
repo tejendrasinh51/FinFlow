@@ -7,6 +7,7 @@ const nextConfig = {
     domains: [],
     formats: ['image/avif', 'image/webp'],
   },
+  compress: true,
   typescript: {
     ignoreBuildErrors: true,
   },

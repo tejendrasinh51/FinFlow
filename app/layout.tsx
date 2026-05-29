@@ -24,6 +24,7 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://finflow.io'),
   title: 'FinFlow Analytics — Real-Time Financial Intelligence Dashboard',
   description:
     'Enterprise SaaS analytics dashboard delivering unified real-time financial intelligence for 10,000+ DAU. Role-based access, one-click exports, 99.9% uptime.',

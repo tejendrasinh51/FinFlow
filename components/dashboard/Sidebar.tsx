@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface NavItem {
   icon: React.ElementType
@@ -38,13 +38,40 @@ interface SidebarProps {
   currentRole?: 'admin' | 'analyst' | 'viewer'
 }
 
-export function Sidebar({ collapsed, onToggle, currentRole = 'admin' }: SidebarProps) {
+export function Sidebar({ collapsed, onToggle, currentRole: propRole }: SidebarProps) {
   const pathname = usePathname()
   const [expandedItem, setExpandedItem] = useState<string | null>('/dashboard/finance')
+  const [session, setSession] = useState<{ name: string; role: 'admin' | 'analyst' | 'viewer' } | null>(null)
+
+  // Fetch current user session details
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.success && data.user) {
+          setSession(data.user)
+        }
+      })
+      .catch((err) => console.error('Failed to load Sidebar user context:', err))
+  }, [])
+
+  const currentRole = propRole || session?.role || 'viewer'
+  const userName = session?.name || 'Loading...'
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard'
     return pathname.startsWith(href)
+  }
+
+  // Get initials for profile avatar
+  const getInitials = (name: string) => {
+    if (!name || name === 'Loading...') return 'U'
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase()
   }
 
   return (
@@ -69,8 +96,10 @@ export function Sidebar({ collapsed, onToggle, currentRole = 'admin' }: SidebarP
       {/* Nav */}
       <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
         {navItems.map(item => {
+          // Dynamic RBAC visibility filter
           const visible = !item.adminOnly || currentRole === 'admin'
           if (!visible) return null
+          
           const active = isActive(item.href)
           const hasChildren = !!item.children
           const expanded = expandedItem === item.href
@@ -88,7 +117,7 @@ export function Sidebar({ collapsed, onToggle, currentRole = 'admin' }: SidebarP
               >
                 <Link
                   href={hasChildren ? '#' : item.href}
-                  className="flex items-center gap-3 flex-1"
+                  className="flex items-center gap-3 flex-1 animate-none text-decoration-none"
                   onClick={e => hasChildren && e.preventDefault()}
                 >
                   <item.icon size={17} className="flex-shrink-0" />
@@ -137,14 +166,16 @@ export function Sidebar({ collapsed, onToggle, currentRole = 'admin' }: SidebarP
       </nav>
 
       {/* User */}
-      <div className="p-3 border-t border-[var(--color-border)]">
+      <div className="p-3 border-t border-[var(--color-border)] bg-elevated/20">
         <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
           <div className="w-8 h-8 rounded-full bg-cyan/15 border border-cyan/30 flex items-center justify-center flex-shrink-0">
-            <span className="text-cyan font-mono font-bold text-xs">AK</span>
+            <span className="text-cyan font-mono font-bold text-xs">
+              {getInitials(userName)}
+            </span>
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
-              <div className="text-text-primary text-xs font-medium truncate">Alex Kim</div>
+              <div className="text-text-primary text-xs font-semibold truncate">{userName}</div>
               <div className="text-text-tertiary text-[10px] font-mono capitalize">{currentRole}</div>
             </div>
           )}

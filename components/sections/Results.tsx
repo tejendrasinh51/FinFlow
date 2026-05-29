@@ -27,11 +27,13 @@ function useCounter(target: number, duration = 2000, inView = false) {
   return value
 }
 
+import { AnimatedCounter } from '@/components/ui/AnimatedCounter'
+
 const stats = [
-  { value: 10000, suffix: '+', label: 'Daily Active Users', format: 'number' },
-  { value: 99.9, suffix: '%', label: 'SLA Uptime', format: 'decimal' },
+  { value: 10000, suffix: '+', label: 'Daily Active Users', format: 'number', prefix: '' },
+  { value: 99.9, suffix: '%', label: 'SLA Uptime', format: 'decimal', prefix: '' },
   { value: 60, prefix: '−', suffix: '%', label: 'Reporting Time Saved', format: 'number' },
-  { value: 3, suffix: ' mins', label: 'Avg Session Duration', format: 'number' },
+  { value: 3, suffix: ' mins', label: 'Avg Session Duration', format: 'number', prefix: '' },
 ]
 
 const dauData = [
@@ -49,21 +51,20 @@ const dauData = [
   { month: 'Dec', dau: 10247 },
 ]
 
-function StatCard({ stat, inView }: { stat: typeof stats[0]; inView: boolean }) {
-  const counted = useCounter(stat.value, 2000, inView)
-
-  const display =
-    stat.format === 'decimal'
-      ? `${stat.prefix ?? ''}${stat.value.toFixed(1)}${stat.suffix}`
-      : `${stat.prefix ?? ''}${counted.toLocaleString()}${stat.suffix}`
-
+function StatCard({ stat }: { stat: typeof stats[0] }) {
   return (
     <div className="metric-card card p-6 text-center">
       <div
         className="font-mono font-medium text-3xl md:text-4xl mb-2"
         style={{ color: 'var(--color-cyan)' }}
       >
-        {display}
+        <AnimatedCounter
+          value={stat.value}
+          duration={1500}
+          prefix={stat.prefix}
+          suffix={stat.suffix}
+          decimals={stat.format === 'decimal' ? 1 : 0}
+        />
       </div>
       <div className="text-text-secondary text-sm">{stat.label}</div>
     </div>

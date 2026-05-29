@@ -1,9 +1,9 @@
 'use client'
 
 import { motion, useAnimation } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
-import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts'
+import { SparkLine } from '@/components/ui/SparkLine'
 
 export interface MetricCardProps {
   title: string
@@ -15,17 +15,6 @@ export interface MetricCardProps {
   suffix?: string
   loading?: boolean
   updated?: boolean
-}
-
-function SparkTooltip({ active, payload }: any) {
-  if (active && payload?.[0]) {
-    return (
-      <div className="bg-overlay border border-[var(--color-border-strong)] px-2 py-1 rounded text-[10px] font-mono text-text-secondary">
-        {typeof payload[0].value === 'number' ? payload[0].value.toFixed(0) : payload[0].value}
-      </div>
-    )
-  }
-  return null
 }
 
 export function MetricCard({
@@ -57,8 +46,6 @@ export function MetricCard({
 
   const TrendIcon = trend > 0 ? TrendingUp : trend < 0 ? TrendingDown : Minus
   const trendSign = trend > 0 ? '+' : ''
-
-  const chartData = sparkData.map((v, i) => ({ i, v }))
 
   if (loading) {
     return (
@@ -93,24 +80,10 @@ export function MetricCard({
       </div>
 
       {/* Sparkline */}
-      {chartData.length > 0 && (
-        <div className="h-12 -mx-1">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <Line
-                type="monotone"
-                dataKey="v"
-                stroke={trend >= 0 ? '#00D4FF' : '#EF4444'}
-                strokeWidth={1.5}
-                dot={false}
-                isAnimationActive
-                animationDuration={800}
-              />
-              <Tooltip content={<SparkTooltip />} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+      {sparkData && sparkData.length > 0 && (
+        <SparkLine data={sparkData} />
       )}
     </motion.div>
   )
 }
+
