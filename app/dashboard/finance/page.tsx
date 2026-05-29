@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useRef, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { ExportMenu } from '@/components/ui/ExportMenu'
 import { AlertBanner } from '@/components/ui/AlertBanner'
@@ -87,14 +87,71 @@ const TABS = [
   { id: 'cashflow',  label: 'Cashflow' },
 ]
 
-export default function FinancePage() {
-  const [tab, setTab] = useState('pl')
+export default function FinancePage({ defaultTab = 'pl' }: { defaultTab?: string }) {
+  const [tab, setTab] = useState(defaultTab)
+  
+  // Interactive Fiscal Year selection controller
+  const [fiscalYear, setFiscalYear] = useState<'2023' | '2024' | '2025'>('2024')
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  // Scaling multipliers based on target year
+  const multiplier = fiscalYear === '2023' ? 0.82 : fiscalYear === '2025' ? 1.15 : 1.0
+
+  // 1. Scaled KPIs
   const metrics = [
-    { title: 'MRR',         value: '2.89M',  prefix: '$', trend: 10.1, sparkData: generateSparkData(14, 2000000, 200000) },
-    { title: 'ARR',         value: '34.7M',  prefix: '$', trend: 10.1, sparkData: generateSparkData(14, 30000000, 2000000) },
-    { title: 'Gross Margin',value: '71.2',   suffix: '%', trend: 2.3,  sparkData: generateSparkData(14, 68, 3) },
-    { title: 'Net Profit',  value: '2.01M',  prefix: '$', trend: 30.5, sparkData: generateSparkData(14, 1500000, 300000) },
+    { title: 'MRR',         value: (2.89 * multiplier).toFixed(2) + 'M',  prefix: '$', trend: fiscalYear === '2023' ? 8.4 : fiscalYear === '2025' ? 12.8 : 10.1, sparkData: generateSparkData(14, 2000000 * multiplier, 200000) },
+    { title: 'ARR',         value: (34.7 * multiplier).toFixed(1) + 'M',  prefix: '$', trend: fiscalYear === '2023' ? 8.4 : fiscalYear === '2025' ? 12.8 : 10.1, sparkData: generateSparkData(14, 30000000 * multiplier, 2000000) },
+    { title: 'Gross Margin',value: (71.2 * (fiscalYear === '2023' ? 0.98 : fiscalYear === '2025' ? 1.02 : 1.0)).toFixed(1),   suffix: '%', trend: fiscalYear === '2023' ? 1.8 : fiscalYear === '2025' ? 2.9 : 2.3,  sparkData: generateSparkData(14, 68 * (fiscalYear === '2023' ? 0.98 : fiscalYear === '2025' ? 1.02 : 1.0), 3) },
+    { title: 'Net Profit',  value: (2.01 * multiplier).toFixed(2) + 'M',  prefix: '$', trend: fiscalYear === '2023' ? 24.2 : fiscalYear === '2025' ? 36.4 : 30.5, sparkData: generateSparkData(14, 1500000 * multiplier, 300000) },
+  ]
+
+  // 2. Scaled Datasets
+  const scaledPlData = plData.map(row => ({
+    ...row,
+    q1: Math.round(row.q1 * multiplier),
+    q2: Math.round(row.q2 * multiplier),
+    q3: Math.round(row.q3 * multiplier),
+    q4: Math.round(row.q4 * multiplier),
+  }))
+
+  const scaledQuarterlyChartData = [
+    { q: 'Q1', revenue: Math.round(2750000 * multiplier), profit: Math.round(780000 * multiplier) },
+    { q: 'Q2', revenue: Math.round(3610000 * multiplier), profit: Math.round(1160000 * multiplier) },
+    { q: 'Q3', revenue: Math.round(4550000 * multiplier), profit: Math.round(1540000 * multiplier) },
+    { q: 'Q4', revenue: Math.round(5630000 * multiplier), profit: Math.round(2010000 * multiplier) },
+  ]
+
+  const scaledMrrData = mrrData.map(row => ({
+    ...row,
+    mrr: Math.round(row.mrr * multiplier),
+    new: Math.round(row.new * multiplier),
+    expansion: Math.round(row.expansion * multiplier),
+    churn: Math.round(row.churn * multiplier),
+    contraction: Math.round(row.contraction * multiplier),
+  }))
+
+  const scaledCashflowData = cashflowData.map(row => ({
+    ...row,
+    inflow: Math.round(row.inflow * multiplier),
+    outflow: Math.round(row.outflow * multiplier),
+    net: Math.round(row.net * multiplier),
+  }))
+
+  const scaledCashflowSummary = [
+    { label: 'Total Inflows',  value: '$' + (18.78 * multiplier).toFixed(2) + 'M', trend: fiscalYear === '2023' ? '+38.4%' : fiscalYear === '2025' ? '+48.2%' : '+42.3%', positive: true,  icon: TrendingUp },
+    { label: 'Total Outflows', value: '$' + (10.85 * multiplier).toFixed(2) + 'M', trend: fiscalYear === '2023' ? '+28.5%' : fiscalYear === '2025' ? '+35.1%' : '+31.8%', positive: false, icon: TrendingDown },
+    { label: 'Net Cashflow',   value: '$' + (7.93 * multiplier).toFixed(2) + 'M',  trend: fiscalYear === '2023' ? '+52.1%' : fiscalYear === '2025' ? '+62.4%' : '+57.6%', positive: true,  icon: TrendingUp },
   ]
 
   return (
@@ -104,12 +161,59 @@ export default function FinancePage() {
         <div className="flex-1">
           <Breadcrumbs crumbs={[{ label: 'Finance' }]} />
           <h1 className="font-display font-bold text-2xl text-text-primary mt-2">Financial Overview</h1>
-          <p className="text-text-secondary text-sm font-mono mt-1">Full Year 2024 · Live data</p>
+          <p className="text-text-secondary text-sm font-mono mt-1">Full Year {fiscalYear} · Live data</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="btn-ghost text-sm py-2 px-4 flex items-center gap-2">
-            <Calendar size={14} /> FY 2024
-          </button>
+          <div ref={dropdownRef} className="relative">
+            <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="btn-secondary text-sm py-2 px-4 flex items-center gap-2 border border-[var(--color-border)] rounded-lg hover:border-cyan/30 transition-all"
+            >
+              <Calendar size={14} className="text-cyan" />
+              FY {fiscalYear}
+            </button>
+            
+            <AnimatePresence>
+              {dropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 top-12 w-48 card shadow-cyan-md z-50 overflow-hidden"
+                >
+                  <div className="p-1">
+                    {[
+                      { year: '2023', label: 'FY 2023', desc: 'Historical Data' },
+                      { year: '2024', label: 'FY 2024', desc: 'Active Baseline' },
+                      { year: '2025', label: 'FY 2025', desc: 'Forecast Projection' }
+                    ].map(opt => (
+                      <button
+                        key={opt.year}
+                        onClick={() => {
+                          setFiscalYear(opt.year as any)
+                          setDropdownOpen(false)
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-left ${
+                          fiscalYear === opt.year 
+                            ? 'bg-cyan/10 text-cyan' 
+                            : 'hover:bg-elevated text-text-primary'
+                        }`}
+                      >
+                        <div>
+                          <div className="text-xs font-medium">{opt.label}</div>
+                          <div className="text-[9px] text-text-tertiary font-mono">{opt.desc}</div>
+                        </div>
+                        {fiscalYear === opt.year && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-cyan" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           <ExportMenu />
         </div>
       </div>
@@ -118,8 +222,8 @@ export default function FinancePage() {
       <AlertBanner
         type="success"
         title="Record Quarter"
-        message="Q4 2024 net profit of $2.01M represents a 30.5% QoQ improvement — exceeding the annual target."
-        action={{ label: 'View Q4 report', onClick: () => {} }}
+        message={`FY ${fiscalYear} performance shows strong YoY indicators — metrics are scaled dynamically.`}
+        action={{ label: 'View fiscal plan', onClick: () => {} }}
       />
 
       {/* KPIs */}
@@ -141,7 +245,7 @@ export default function FinancePage() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <div className="section-label mb-1">Profit & Loss Statement</div>
-                <h2 className="font-display font-semibold text-lg">Full Year 2024</h2>
+                <h2 className="font-display font-semibold text-lg">Full Year {fiscalYear}</h2>
               </div>
               <ExportMenu variant="ghost" />
             </div>
@@ -149,13 +253,13 @@ export default function FinancePage() {
               <table className="w-full font-mono text-sm">
                 <thead>
                   <tr className="border-b border-[var(--color-border)]">
-                    {['Line Item', 'Q1 2024', 'Q2 2024', 'Q3 2024', 'Q4 2024', 'FY Total'].map(h => (
+                    {['Line Item', `Q1 ${fiscalYear}`, `Q2 ${fiscalYear}`, `Q3 ${fiscalYear}`, `Q4 ${fiscalYear}`, 'FY Total'].map(h => (
                       <th key={h} className={`data-table-header py-3 ${h === 'Line Item' ? 'text-left' : 'text-right'} px-3`}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">
-                  {plData.map(row => {
+                  {scaledPlData.map(row => {
                     const fy = row.q1 + row.q2 + row.q3 + row.q4
                     const isProfit = row.type === 'profit'
                     const isCost   = row.type === 'cost'
@@ -183,12 +287,7 @@ export default function FinancePage() {
             <div className="section-label mb-1">Quarterly Performance</div>
             <h2 className="font-display font-semibold text-lg mb-6">Revenue vs Net Profit</h2>
             <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={[
-                { q: 'Q1', revenue: 2750000, profit: 780000 },
-                { q: 'Q2', revenue: 3610000, profit: 1160000 },
-                { q: 'Q3', revenue: 4550000, profit: 1540000 },
-                { q: 'Q4', revenue: 5630000, profit: 2010000 },
-              ]} margin={{ top: 5, right: 5, left: 0, bottom: 0 }} barGap={4}>
+              <BarChart data={scaledQuarterlyChartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }} barGap={4}>
                 <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="q" tick={{ fill: '#3A4A5C', fontSize: 11, fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
                 <YAxis tickFormatter={v => `$${(v/1000000).toFixed(1)}M`} tick={{ fill: '#3A4A5C', fontSize: 11, fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
@@ -215,7 +314,7 @@ export default function FinancePage() {
               </div>
             </div>
             <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={mrrData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+              <AreaChart data={scaledMrrData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="mrrGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#00D4FF" stopOpacity={0.25} />
@@ -236,7 +335,7 @@ export default function FinancePage() {
             <div className="section-label mb-1">MRR Movement</div>
             <h2 className="font-display font-semibold text-lg mb-6">New · Expansion · Churn — Monthly</h2>
             <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={mrrData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }} barGap={2}>
+              <BarChart data={scaledMrrData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }} barGap={2}>
                 <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="month" tick={{ fill: '#3A4A5C', fontSize: 11, fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
                 <YAxis tickFormatter={v => `$${(v/1000).toFixed(0)}K`} tick={{ fill: '#3A4A5C', fontSize: 11, fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
@@ -259,7 +358,7 @@ export default function FinancePage() {
             <div className="section-label mb-1">Operating Cashflow</div>
             <h2 className="font-display font-semibold text-lg mb-6">Inflow vs Outflow vs Net — 12 Months</h2>
             <ResponsiveContainer width="100%" height={300}>
-              <ComposedChart data={cashflowData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+              <ComposedChart data={scaledCashflowData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="netGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10B981" stopOpacity={0.2} />
@@ -280,11 +379,7 @@ export default function FinancePage() {
 
           {/* Cashflow summary table */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              { label: 'Total Inflows',  value: '$18.78M', trend: '+42.3%', positive: true,  icon: TrendingUp },
-              { label: 'Total Outflows', value: '$10.85M', trend: '+31.8%', positive: false, icon: TrendingDown },
-              { label: 'Net Cashflow',   value: '$7.93M',  trend: '+57.6%', positive: true,  icon: TrendingUp },
-            ].map(s => (
+            {scaledCashflowSummary.map(s => (
               <div key={s.label} className="metric-card card p-5 text-center">
                 <div className="text-text-tertiary text-xs font-mono uppercase tracking-wider mb-3">{s.label}</div>
                 <div className="font-mono font-medium text-2xl text-text-primary mb-1">{s.value}</div>

@@ -19,8 +19,8 @@ export function AnimatedCounter({
   decimals = 0,
 }: AnimatedCounterProps) {
   const ref = useRef<HTMLSpanElement>(null);
-  // Trigger when scrolled 10% into viewport
-  const isInView = useInView(ref, { once: true, margin: '-10% 0px' });
+  // Trigger when scrolled slightly into viewport
+  const isInView = useInView(ref, { once: true, margin: '0px 0px -50px 0px' });
   const [count, setCount] = useState(0);
 
   useEffect(() => {

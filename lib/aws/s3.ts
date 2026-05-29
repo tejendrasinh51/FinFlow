@@ -69,9 +69,10 @@ export async function uploadExport(
     const filePath = path.join(exportsDir, uniqueName);
     fs.writeFileSync(filePath, buffer);
     
-    // Return relative public path as target URL
-    const localUrl = `/exports/${uniqueName}`;
-    console.log(`Successfully stored export locally at public/exports/${uniqueName}`);
+    // Return self-contained base64 data URL to completely bypass Next.js static asset caching latency in local dev mode
+    const base64Data = buffer.toString('base64');
+    const localUrl = `data:${contentType};base64,${base64Data}`;
+    console.log(`Successfully stored export locally at public/exports/${uniqueName} and generated base64 download stream.`);
     
     return { key: uniqueName, signedUrl: localUrl };
   } catch (err) {

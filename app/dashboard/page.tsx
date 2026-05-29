@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis,
@@ -116,6 +116,19 @@ export default function DashboardPage() {
   
   const [loading, setLoading] = useState(true)
   const [updatedMetric, setUpdatedMetric] = useState<number | null>(null)
+  
+  // Custom controls state
+  const [rangeOpen, setRangeOpen] = useState(false)
+  const [selectedRange, setSelectedRange] = useState('Last 12 months')
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [visibleSeries, setVisibleSeries] = useState({
+    revenue: true,
+    expense: true,
+    profit: true,
+  })
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  
+  const controlsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 500)
@@ -125,12 +138,42 @@ export default function DashboardPage() {
   // Highlight updated card when live values fluctuate
   useEffect(() => {
     if (Object.keys(liveValues).length === 0) return
-    // Flash a random updated metric card indicator
     const idx = Math.floor(Math.random() * metrics.length)
     setUpdatedMetric(idx)
     const t = setTimeout(() => setUpdatedMetric(null), 800)
     return () => clearTimeout(t)
   }, [liveValues])
+
+  // Handle click outside to close dropdowns
+  useEffect(() => {
+    const clickOutside = (e: MouseEvent) => {
+      if (controlsRef.current && !controlsRef.current.contains(e.target as Node)) {
+        setRangeOpen(false)
+        setFilterOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', clickOutside)
+    return () => document.removeEventListener('mousedown', clickOutside)
+  }, [])
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    setLoading(true)
+    await new Promise(r => setTimeout(r, 600))
+    setLoading(false)
+    setIsRefreshing(false)
+  }
+
+  // Filter revenue chart data based on date range selection
+  const getFilteredRevenueData = () => {
+    if (selectedRange === 'Last 3 months') {
+      return revenueData.slice(-3)
+    }
+    if (selectedRange === 'Last 30 days') {
+      return revenueData.slice(-1)
+    }
+    return revenueData
+  }
 
   const displayMetrics = metrics.map((m, i) => {
     const typeMap: Record<string, string> = {
@@ -174,17 +217,91 @@ export default function DashboardPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="btn-ghost text-sm py-2 px-4 flex items-center gap-2">
-            <Calendar size={14} />
-            Last 12 months
-          </button>
-          <button className="btn-ghost text-sm py-2 px-4 flex items-center gap-2">
-            <Filter size={14} />
-            Filter
-          </button>
-          <button className="btn-ghost text-sm py-2 px-3">
-            <RefreshCw size={14} />
+        <div className="flex items-center gap-3 relative" ref={controlsRef}>
+          {/* Calendar Range Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => { setRangeOpen(!rangeOpen); setFilterOpen(false) }}
+              className="btn-ghost text-sm py-2 px-4 flex items-center gap-2"
+            >
+              <Calendar size={14} />
+              {selectedRange}
+            </button>
+            <AnimatePresence>
+              {rangeOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                  transition={{ duration: 0.12 }}
+                  className="absolute right-0 top-11 z-50 card shadow-cyan-md p-2 space-y-1 bg-surface w-48 border border-[var(--color-border-strong)]"
+                >
+                  {['Last 30 days', 'Last 3 months', 'Last 12 months', 'Year to date'].map(r => (
+                    <button
+                      key={r}
+                      onClick={() => {
+                        setSelectedRange(r)
+                        setRangeOpen(false)
+                      }}
+                      className={`w-full text-left px-3 py-2 text-xs font-mono rounded-md transition-colors ${selectedRange === r ? 'text-cyan bg-cyan/5 font-semibold' : 'text-text-secondary hover:bg-elevated hover:text-text-primary'}`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Filter Series Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => { setFilterOpen(!filterOpen); setRangeOpen(false) }}
+              className="btn-ghost text-sm py-2 px-4 flex items-center gap-2"
+            >
+              <Filter size={14} />
+              Filter
+            </button>
+            <AnimatePresence>
+              {filterOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                  transition={{ duration: 0.12 }}
+                  className="absolute right-0 top-11 z-50 card shadow-cyan-md p-3 space-y-2 bg-surface w-48 border border-[var(--color-border-strong)] text-xs font-mono"
+                >
+                  <div className="text-text-tertiary uppercase text-[10px] pb-1 border-b border-[var(--color-border)] mb-1">
+                    Toggle Chart Series
+                  </div>
+                  {([
+                    { key: 'revenue', label: 'Revenue', color: 'bg-cyan' },
+                    { key: 'expense', label: 'Expense', color: 'bg-negative' },
+                    { key: 'profit', label: 'Profit', color: 'bg-positive' },
+                  ] as const).map(s => (
+                    <label key={s.key} className="flex items-center gap-2.5 py-1 px-1 rounded hover:bg-elevated cursor-pointer text-text-secondary hover:text-text-primary">
+                      <input
+                        type="checkbox"
+                        checked={visibleSeries[s.key]}
+                        onChange={() => setVisibleSeries(v => ({ ...v, [s.key]: !v[s.key] }))}
+                        className="rounded border-[var(--color-border)] text-cyan focus:ring-cyan/30 bg-elevated"
+                      />
+                      <div className={`w-2 h-2 rounded-full ${s.color}`} />
+                      <span>{s.label}</span>
+                    </label>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Refresh Action */}
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="btn-ghost text-sm py-2 px-3 disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
           </button>
         </div>
       </div>
@@ -239,7 +356,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={250}>
-            <AreaChart data={revenueData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+            <AreaChart data={getFilteredRevenueData()} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#00D4FF" stopOpacity={0.2} />
@@ -266,9 +383,15 @@ export default function DashboardPage() {
                 axisLine={false} tickLine={false}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="revenue" stroke="#00D4FF" strokeWidth={2} fill="url(#revGrad)" dot={false} />
-              <Area type="monotone" dataKey="expense" stroke="#EF4444" strokeWidth={1.5} fill="url(#expGrad)" dot={false} />
-              <Area type="monotone" dataKey="profit" stroke="#10B981" strokeWidth={1.5} fill="url(#profGrad)" dot={false} />
+              {visibleSeries.revenue && (
+                <Area type="monotone" dataKey="revenue" stroke="#00D4FF" strokeWidth={2} fill="url(#revGrad)" dot={false} />
+              )}
+              {visibleSeries.expense && (
+                <Area type="monotone" dataKey="expense" stroke="#EF4444" strokeWidth={1.5} fill="url(#expGrad)" dot={false} />
+              )}
+              {visibleSeries.profit && (
+                <Area type="monotone" dataKey="profit" stroke="#10B981" strokeWidth={1.5} fill="url(#profGrad)" dot={false} />
+              )}
             </AreaChart>
           </ResponsiveContainer>
         </motion.div>

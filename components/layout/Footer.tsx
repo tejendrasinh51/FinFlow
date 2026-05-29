@@ -1,10 +1,33 @@
+import Link from 'next/link'
 import { TrendingUp, Globe, Link2, ExternalLink, Mail } from 'lucide-react'
 
 const footerLinks = {
-  Product: ['Dashboard', 'Reports', 'Exports', 'API', 'Integrations'],
-  Company: ['About', 'Case Studies', 'Blog', 'Careers', 'Press'],
-  Legal: ['Privacy Policy', 'Terms of Service', 'Security', 'GDPR'],
-  Support: ['Documentation', 'Status', 'Contact', 'Community'],
+  Product: [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Reports', href: '/dashboard/reports' },
+    { label: 'Exports', href: '/dashboard/finance' },
+    { label: 'API', href: '/docs/api' },
+    { label: 'Integrations', href: '/integrations' },
+  ],
+  Company: [
+    { label: 'About', href: '/about' },
+    { label: 'Case Studies', href: '/#results' },
+    { label: 'Blog', href: '/blog' },
+    { label: 'Careers', href: '/careers' },
+    { label: 'Press', href: '/press' },
+  ],
+  Legal: [
+    { label: 'Privacy Policy', href: '/privacy' },
+    { label: 'Terms of Service', href: '/terms' },
+    { label: 'Security', href: '/security' },
+    { label: 'GDPR', href: '/gdpr' },
+  ],
+  Support: [
+    { label: 'Documentation', href: '/docs' },
+    { label: 'Status', href: 'https://status.finflow.io' },
+    { label: 'Contact', href: '/#contact' },
+    { label: 'Community', href: '/community' },
+  ],
 }
 
 export function Footer() {
@@ -44,13 +67,24 @@ export function Footer() {
               </h4>
               <ul className="space-y-2.5">
                 {links.map((link) => (
-                  <li key={link}>
-                    <a
-                      href="#"
-                      className="text-text-tertiary hover:text-text-secondary text-sm transition-colors"
-                    >
-                      {link}
-                    </a>
+                  <li key={link.label}>
+                    {link.href.startsWith('http') ? (
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-text-tertiary hover:text-text-secondary text-sm transition-colors"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className="text-text-tertiary hover:text-text-secondary text-sm transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>

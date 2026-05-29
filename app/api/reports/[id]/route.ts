@@ -28,8 +28,8 @@ export async function GET(
       const dbRes = await client.query(
         `SELECT id, title, config, is_public, created_at, updated_at 
          FROM reports
-         WHERE id = $2`,
-        [orgId, id]
+         WHERE id = $1`,
+        [id]
       );
 
       await client.query('COMMIT');
@@ -80,8 +80,8 @@ export async function PATCH(
 
       // Dynamically build the UPDATE fields
       const setClauses: string[] = [];
-      const queryValues: any[] = [orgId, id];
-      let valueIdx = 3;
+      const queryValues: any[] = [id];
+      let valueIdx = 2;
 
       if (updates.title !== undefined) {
         setClauses.push(`title = $${valueIdx++}`);
@@ -101,7 +101,7 @@ export async function PATCH(
       const queryText = `
         UPDATE reports
         SET ${setClauses.join(', ')}
-        WHERE id = $2
+        WHERE id = $1
         RETURNING id, title, config, is_public, created_at, updated_at
       `;
 
@@ -151,8 +151,8 @@ export async function DELETE(
 
       const dbRes = await client.query(
         `DELETE FROM reports
-         WHERE id = $2`,
-        [orgId, id]
+         WHERE id = $1`,
+        [id]
       );
 
       await client.query('COMMIT');

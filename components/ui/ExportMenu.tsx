@@ -8,6 +8,7 @@ interface ExportMenuProps {
   onExport?: (format: 'pdf' | 'csv' | 'excel') => void
   loading?: boolean
   variant?: 'button' | 'ghost'
+  reportTitle?: string
 }
 
 const formats = [
@@ -16,7 +17,7 @@ const formats = [
   { id: 'excel', label: 'Export Excel', icon: FileSpreadsheet, desc: 'Formatted workbook' },
 ] as const
 
-export function ExportMenu({ onExport, loading, variant = 'button' }: ExportMenuProps) {
+export function ExportMenu({ onExport, loading, variant = 'button', reportTitle = 'FinFlow Report' }: ExportMenuProps) {
   const [open, setOpen] = useState(false)
   const [exporting, setExporting] = useState<string | null>(null)
   const ref = useRef<HTMLDivElement>(null)
@@ -32,9 +33,75 @@ export function ExportMenu({ onExport, loading, variant = 'button' }: ExportMenu
   const handleExport = async (format: 'pdf' | 'csv' | 'excel') => {
     setExporting(format)
     setOpen(false)
-    await new Promise(r => setTimeout(r, 1500))
-    onExport?.(format)
-    setExporting(null)
+    
+    try {
+      // 1. Request background job creation
+      const triggerRes = await fetch('/api/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ format, title: reportTitle }),
+      })
+      if (!triggerRes.ok) throw new Error('Failed to initiate export job')
+      
+      const triggerData = await triggerRes.json()
+      if (!triggerData.success || !triggerData.jobId) throw new Error('No job ID returned')
+      
+      const jobId = triggerData.jobId
+      
+      // 2. Poll job status until complete
+      let attempts = 0
+      const maxAttempts = 30 // Max 30 seconds
+      
+      const pollStatus = (): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const interval = setInterval(async () => {
+            attempts++
+            if (attempts > maxAttempts) {
+              clearInterval(interval)
+              reject(new Error('Export operation timed out'))
+              return
+            }
+            
+            try {
+              const statusRes = await fetch(`/api/export/${jobId}`)
+              if (statusRes.ok) {
+                const statusData = await statusRes.json()
+                if (statusData.success && statusData.job) {
+                  const status = statusData.job.status
+                  if (status === 'done') {
+                    clearInterval(interval)
+                    resolve(statusData.job.url || '')
+                  } else if (status === 'error') {
+                    clearInterval(interval)
+                    reject(new Error('Background export compilation failed'))
+                  }
+                }
+              }
+            } catch (err) {
+              // Ignore network glitches during polling and continue
+            }
+          }, 1000)
+        })
+      }
+      
+      const downloadUrl = await pollStatus()
+      
+      // 3. Trigger immediate download inside the browser
+      if (downloadUrl && downloadUrl !== '#') {
+        const link = document.createElement('a')
+        link.href = downloadUrl
+        link.setAttribute('download', `${reportTitle.toLowerCase().replace(/[^a-z0-9]/g, '-')}.${format === 'excel' ? 'xlsx' : format}`)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      }
+      
+      onExport?.(format)
+    } catch (err) {
+      console.error('Export error occurred:', err)
+    } finally {
+      setExporting(null)
+    }
   }
 
   return (

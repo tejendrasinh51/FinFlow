@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { Badge } from '@/components/ui/Badge'
@@ -61,22 +61,85 @@ const CHART_TYPES = [
 
 const METRICS = ['Revenue', 'MRR', 'ARR', 'Gross Profit', 'Net Profit', 'Churn Rate', 'DAU', 'Expenses']
 
-function ReportBuilderModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function ReportBuilderModal({
+  open,
+  onClose,
+  onReportCreated,
+  onReportUpdated,
+  editReport = null
+}: {
+  open: boolean;
+  onClose: () => void;
+  onReportCreated?: (report: any) => void;
+  onReportUpdated?: (report: any) => void;
+  editReport?: Report | null;
+}) {
   const [title, setTitle]       = useState('')
   const [chartType, setChart]   = useState('area')
   const [metric, setMetric]     = useState('Revenue')
   const [dateRange, setRange]   = useState('last_12_months')
   const [step, setStep]         = useState(1)
 
-  const handleCreate = () => {
-    // In real app: POST /api/reports
+  useEffect(() => {
+    if (editReport) {
+      setTitle(editReport.title || '')
+      setChart(editReport.config?.chartType || 'area')
+      setMetric(editReport.config?.metric || 'Revenue')
+      setRange(editReport.config?.dateRange || 'last_12_months')
+    } else {
+      setTitle('')
+      setChart('area')
+      setMetric('Revenue')
+      setRange('last_12_months')
+    }
+    setStep(1)
+  }, [editReport, open])
+
+  const handleSubmit = async () => {
+    try {
+      const type = chartType === 'kpi' ? 'mrr' : chartType === 'donut' ? 'expense' : 'revenue'
+      if (editReport) {
+        const res = await fetch(`/api/reports/${editReport.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            config: { type, chartType, metric, dateRange },
+          }),
+        })
+        if (res.ok) {
+          const body = await res.json()
+          if (body.success && body.report) {
+            onReportUpdated?.(body.report)
+          }
+        }
+      } else {
+        const res = await fetch('/api/reports', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            config: { type, chartType, metric, dateRange },
+            is_public: false,
+          }),
+        })
+        if (res.ok) {
+          const body = await res.json()
+          if (body.success && body.report) {
+            onReportCreated?.(body.report)
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to submit report:', err)
+    }
     onClose()
     setStep(1)
     setTitle('')
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Create New Report" size="lg">
+    <Modal open={open} onClose={onClose} title={editReport ? "Edit Report" : "Create New Report"} size="lg">
       {/* Step indicator */}
       <div className="flex items-center gap-2 mb-6">
         {[1, 2, 3].map(s => (
@@ -185,7 +248,7 @@ function ReportBuilderModal({ open, onClose }: { open: boolean; onClose: () => v
             ))}
           </div>
           <p className="text-text-tertiary text-xs font-mono">
-            This report will be saved as a draft. You can publish it from the Reports page.
+            {editReport ? "Saving changes will immediately update this report layout." : "This report will be saved as a draft. You can publish it from the Reports page."}
           </p>
         </div>
       )}
@@ -196,12 +259,260 @@ function ReportBuilderModal({ open, onClose }: { open: boolean; onClose: () => v
           <button onClick={() => setStep(s => s - 1)} className="btn-ghost text-sm py-2 px-4">← Back</button>
         ) : <div />}
         <button
-          onClick={step < 3 ? () => setStep(s => s + 1) : handleCreate}
+          onClick={step < 3 ? () => setStep(s => s + 1) : handleSubmit}
           className="btn-primary text-sm py-2.5 px-6"
           disabled={step === 1 && !title}
         >
-          {step < 3 ? 'Continue →' : '✓ Create Report'}
+          {step < 3 ? 'Continue →' : editReport ? '✓ Save Changes' : '✓ Create Report'}
         </button>
+      </div>
+    </Modal>
+  )
+}
+
+// ── View Report Drawer/Modal ─────────────────────────────────────────
+interface ViewReportModalProps {
+  open: boolean
+  onClose: () => void
+  report: any
+}
+
+function ViewReportModal({ open, onClose, report }: ViewReportModalProps) {
+  const [exporting, setExporting] = useState<string | null>(null)
+  
+  if (!report) return null
+
+  const getMockData = () => {
+    const metricName = report.config?.metric || 'Revenue'
+    if (metricName.toLowerCase() === 'expenses' || report.type === 'expense') {
+      return [84000, 78000, 92000, 81000, 89000, 95000, 87000, 102000, 91000]
+    }
+    if (metricName.toLowerCase() === 'churn rate') {
+      return [4.2, 3.9, 3.5, 3.2, 2.9, 2.7, 2.3, 2.1, 1.8]
+    }
+    return [120000, 135000, 150000, 142000, 168000, 185000, 210000, 198000, 245000]
+  }
+
+  const mockValues = getMockData()
+  const svgWidth = 480
+  const svgHeight = 120
+  const paddingX = 20
+  const paddingY = 15
+  
+  const minVal = Math.min(...mockValues) * 0.9
+  const maxVal = Math.max(...mockValues) * 1.1
+  const chartW = svgWidth - (paddingX * 2)
+  const chartH = svgHeight - (paddingY * 2)
+  
+  const points = mockValues.map((v, i) => {
+    const x = paddingX + (i / (mockValues.length - 1)) * chartW
+    const y = paddingY + chartH - ((v - minVal) / (maxVal - minVal)) * chartH
+    return `${x},${y}`
+  })
+  
+  const pathD = points.length > 0 ? `M ${points.join(' L ')}` : ''
+  const fillD = points.length > 0 ? `M ${paddingX},${paddingY + chartH} L ${points.join(' L ')} L ${paddingX + chartW},${paddingY + chartH} Z` : ''
+
+  const handleExport = async (format: 'pdf' | 'excel') => {
+    setExporting(format)
+    try {
+      const res = await fetch('/api/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ format, title: report.title }),
+      })
+      if (!res.ok) throw new Error('Export trigger failed')
+      const triggerData = await res.json()
+      const jobId = triggerData.jobId
+
+      let attempts = 0
+      const poll = setInterval(async () => {
+        attempts++
+        if (attempts > 30) {
+          clearInterval(poll)
+          setExporting(null)
+          return
+        }
+        const statusRes = await fetch(`/api/export/${jobId}`)
+        if (statusRes.ok) {
+          const statusData = await statusRes.json()
+          if (statusData.success && statusData.job) {
+            const status = statusData.job.status
+            if (status === 'done') {
+              clearInterval(poll)
+              setExporting(null)
+              const downloadUrl = statusData.job.url
+              if (downloadUrl) {
+                const a = document.createElement('a')
+                a.href = downloadUrl
+                a.setAttribute('download', `${report.title.toLowerCase().replace(/[^a-z0-9]/g, '-')}.${format === 'excel' ? 'xlsx' : 'pdf'}`)
+                document.body.appendChild(a)
+                a.click()
+                document.body.removeChild(a)
+              }
+            } else if (status === 'error') {
+              clearInterval(poll)
+              setExporting(null)
+            }
+          }
+        }
+      }, 1000)
+    } catch (e) {
+      console.error(e)
+      setExporting(null)
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title={report.title} size="md">
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <Badge variant={report.status === 'published' ? 'success' : report.status === 'draft' ? 'warning' : 'info'} dot>
+            {report.status}
+          </Badge>
+          <Badge variant="default">
+            {report.type.toUpperCase()} Report
+          </Badge>
+          <span className="text-text-tertiary text-xs font-mono">
+            Updated {report.updatedAt}
+          </span>
+        </div>
+
+        <div className="bg-elevated border border-[var(--color-border)] rounded-xl p-4 grid grid-cols-2 gap-4">
+          <div>
+            <div className="text-[10px] font-mono text-text-tertiary uppercase tracking-wider">Metrics Parameter</div>
+            <div className="text-text-secondary text-sm font-medium mt-1 font-mono">{report.config?.metric || 'Revenue'}</div>
+          </div>
+          <div>
+            <div className="text-[10px] font-mono text-text-tertiary uppercase tracking-wider">Visualization Style</div>
+            <div className="text-text-secondary text-sm font-medium mt-1 capitalize font-mono">{report.config?.chartType || 'Area Chart'}</div>
+          </div>
+          <div>
+            <div className="text-[10px] font-mono text-text-tertiary uppercase tracking-wider">Historical Scope</div>
+            <div className="text-text-secondary text-sm font-medium mt-1 capitalize font-mono">{report.config?.dateRange?.replace(/_/g, ' ') || 'Last 12 Months'}</div>
+          </div>
+          <div>
+            <div className="text-[10px] font-mono text-text-tertiary uppercase tracking-wider">Associated Widgets</div>
+            <div className="text-text-secondary text-sm font-medium mt-1 font-mono">{report.widgets || 4} components</div>
+          </div>
+        </div>
+
+        <div className="bg-elevated border border-[var(--color-border)] rounded-xl p-4 overflow-hidden relative">
+          <div className="text-[10px] font-mono text-text-tertiary uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan animate-pulse"></span>
+            Simulated Trend Stream Preview
+          </div>
+          <div className="flex items-center justify-center">
+            <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full overflow-visible">
+              <defs>
+                <linearGradient id="viewGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#00D4FF" stopOpacity="0.1" />
+                  <stop offset="100%" stopColor="#00D4FF" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <path d={fillD} fill="url(#viewGrad)" />
+              <path d={pathD} fill="none" stroke="#00D4FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              {points.map((p, idx) => {
+                const [cx, cy] = p.split(',')
+                return <circle key={idx} cx={cx} cy={cy} r="3.5" fill="#05080F" stroke="#00D4FF" strokeWidth="1.5" />
+              })}
+            </svg>
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-[var(--color-border)] flex items-center justify-between">
+          <span className="text-text-tertiary text-xs font-mono">
+            Requires {report.status === 'published' ? 'export:pdf' : 'export:raw'} auth
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleExport('pdf')}
+              className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"
+              disabled={!!exporting}
+            >
+              {exporting === 'pdf' ? (
+                <>
+                  <svg className="animate-spin h-3 w-3 text-cyan" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Compiling…
+                </>
+              ) : (
+                <>
+                  <FileText size={12} className="text-cyan" />
+                  Export PDF
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => handleExport('excel')}
+              className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"
+              disabled={!!exporting}
+            >
+              {exporting === 'excel' ? (
+                <>
+                  <svg className="animate-spin h-3 w-3 text-cyan" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Compiling…
+                </>
+              ) : (
+                <>
+                  <FileSpreadsheet size={12} className="text-cyan" />
+                  Export Excel
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ── Delete Confirmation Modal ────────────────────────────────────────
+function DeleteConfirmationModal({
+  open,
+  onClose,
+  onConfirm,
+  reportTitle,
+  isDeleting
+}: {
+  open: boolean
+  onClose: () => void
+  onConfirm: () => void
+  reportTitle: string
+  isDeleting: boolean
+}) {
+  return (
+    <Modal open={open} onClose={onClose} title="Confirm Report Deletion" size="sm">
+      <div className="space-y-5">
+        <div className="p-3 bg-negative/5 border border-negative/20 rounded-lg flex gap-3">
+          <Trash2 size={16} className="text-negative flex-shrink-0 mt-0.5" />
+          <div className="text-xs text-text-secondary leading-relaxed">
+            Are you sure you want to permanently delete <strong className="text-text-primary">{reportTitle}</strong>? This action will remove the report layout and dashboard components and cannot be undone.
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--color-border)]">
+          <button onClick={onClose} className="btn-ghost text-xs py-2 px-4" disabled={isDeleting}>
+            Cancel
+          </button>
+          <button onClick={onConfirm} className="btn-danger text-xs py-2.5 px-4 flex items-center gap-1.5" disabled={isDeleting}>
+            {isDeleting ? (
+              <>
+                <svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Deleting…
+              </>
+            ) : (
+              <>✕ Delete Report</>
+            )}
+          </button>
+        </div>
       </div>
     </Modal>
   )
@@ -210,6 +521,143 @@ function ReportBuilderModal({ open, onClose }: { open: boolean; onClose: () => v
 // ── Main page ───────────────────────────────────────────────────────
 export default function ReportsPage() {
   const [builderOpen, setBuilderOpen] = useState(false)
+  const [reportList, setReportList] = useState<Report[]>([])
+  
+  // Dynamic state hooks for operational action flows
+  const [viewReport, setViewReport] = useState<any | null>(null)
+  const [editReport, setEditReport] = useState<any | null>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [errorBannerMsg, setErrorBannerMsg] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isDuplicatingId, setIsDuplicatingId] = useState<string | null>(null)
+
+  // Fetch reports on mount
+  useEffect(() => {
+    fetch('/api/reports')
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (data?.success && data.reports) {
+          const dbReports: Report[] = data.reports.map((r: any) => ({
+            id: r.id,
+            title: r.title,
+            type: (r.config?.type as any) || 'custom',
+            status: r.is_public ? 'published' : 'draft',
+            createdBy: 'You',
+            updatedAt: new Date(r.updated_at).toLocaleDateString(),
+            views: 0,
+            widgets: r.config?.widgets?.length || 4,
+            config: r.config // Save configuration for Edit/View actions
+          }))
+          setReportList([...dbReports, ...reports])
+        } else {
+          setReportList(reports)
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load reports:', err)
+        setReportList(reports)
+      })
+  }, [])
+
+  const handleReportCreated = (newDbReport: any) => {
+    const mapped: Report = {
+      id: newDbReport.id,
+      title: newDbReport.title,
+      type: (newDbReport.config?.type as any) || 'custom',
+      status: newDbReport.is_public ? 'published' : 'draft',
+      createdBy: 'You',
+      updatedAt: 'Just now',
+      views: 0,
+      widgets: newDbReport.config?.widgets?.length || 4,
+      config: newDbReport.config
+    }
+    setReportList(prev => [mapped, ...prev])
+  }
+
+  const handleReportUpdated = (updatedDbReport: any) => {
+    setReportList(prev => prev.map(r => {
+      if (r.id === updatedDbReport.id) {
+        return {
+          ...r,
+          title: updatedDbReport.title,
+          type: (updatedDbReport.config?.type as any) || 'custom',
+          status: updatedDbReport.is_public ? 'published' : 'draft',
+          widgets: updatedDbReport.config?.widgets?.length || 4,
+          updatedAt: 'Just now',
+          config: updatedDbReport.config
+        }
+      }
+      return r
+    }))
+  }
+
+  const handleDuplicate = async (row: any) => {
+    setIsDuplicatingId(row.id)
+    try {
+      const type = row.type
+      const chartType = row.config?.chartType || 'area'
+      const metric = row.config?.metric || 'Revenue'
+      const dateRange = row.config?.dateRange || 'last_12_months'
+
+      const res = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `${row.title} (Copy)`,
+          config: { type, chartType, metric, dateRange },
+          is_public: false,
+        }),
+      })
+      if (res.ok) {
+        const body = await res.json()
+        if (body.success && body.report) {
+          const mapped: Report = {
+            id: body.report.id,
+            title: body.report.title,
+            type: (body.report.config?.type as any) || 'custom',
+            status: body.report.is_public ? 'published' : 'draft',
+            createdBy: 'You',
+            updatedAt: 'Just now',
+            views: 0,
+            widgets: body.report.config?.widgets?.length || 4,
+            config: body.report.config
+          }
+          setReportList(prev => [mapped, ...prev])
+        }
+      }
+    } catch (err) {
+      console.error('Failed to duplicate report:', err)
+    } finally {
+      setIsDuplicatingId(null)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    setIsDeleting(true)
+    setErrorBannerMsg(null)
+    try {
+      const res = await fetch(`/api/reports/${id}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        setReportList(prev => prev.filter(r => r.id !== id))
+        setDeleteConfirmId(null)
+      } else if (res.status === 403) {
+        setErrorBannerMsg('Forbidden: Only accounts with the Admin role can delete reports.')
+        setDeleteConfirmId(null)
+      } else {
+        const errBody = await res.json()
+        setErrorBannerMsg(errBody.error || 'Failed to delete report.')
+        setDeleteConfirmId(null)
+      }
+    } catch (err) {
+      console.error('Failed to delete report:', err)
+      setErrorBannerMsg('Network error: Could not complete deletion.')
+      setDeleteConfirmId(null)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   const columns: Column<Report>[] = [
     {
@@ -217,7 +665,7 @@ export default function ReportsPage() {
       header: 'Report',
       sortable: true,
       render: row => {
-        const Icon = typeIcon[row.type]
+        const Icon = typeIcon[row.type] || FileText
         return (
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-elevated border border-[var(--color-border)] flex items-center justify-center flex-shrink-0">
@@ -283,36 +731,72 @@ export default function ReportsPage() {
 
   const rowActions = (row: Report) => (
     <div className="flex items-center gap-1 justify-end">
-      <button className="w-7 h-7 rounded-lg flex items-center justify-center text-text-tertiary hover:text-cyan hover:bg-cyan/5 transition-all" title="View">
+      <button
+        onClick={() => setViewReport(row)}
+        className="w-7 h-7 rounded-lg flex items-center justify-center text-text-tertiary hover:text-cyan hover:bg-cyan/5 transition-all"
+        title="View"
+      >
         <Eye size={13} />
       </button>
-      <button className="w-7 h-7 rounded-lg flex items-center justify-center text-text-tertiary hover:text-text-secondary hover:bg-elevated transition-all" title="Edit">
+      <button
+        onClick={() => {
+          setEditReport(row)
+          setBuilderOpen(true)
+        }}
+        className="w-7 h-7 rounded-lg flex items-center justify-center text-text-tertiary hover:text-text-secondary hover:bg-elevated transition-all"
+        title="Edit"
+      >
         <Pencil size={13} />
       </button>
-      <button className="w-7 h-7 rounded-lg flex items-center justify-center text-text-tertiary hover:text-text-secondary hover:bg-elevated transition-all" title="Duplicate">
-        <Copy size={13} />
+      <button
+        onClick={() => handleDuplicate(row)}
+        className="w-7 h-7 rounded-lg flex items-center justify-center text-text-tertiary hover:text-text-secondary hover:bg-elevated transition-all"
+        title="Duplicate"
+        disabled={isDuplicatingId === row.id}
+      >
+        {isDuplicatingId === row.id ? (
+          <svg className="animate-spin h-3.5 w-3.5 text-cyan" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+        ) : (
+          <Copy size={13} />
+        )}
       </button>
-      <button className="w-7 h-7 rounded-lg flex items-center justify-center text-text-tertiary hover:text-negative hover:bg-negative/5 transition-all" title="Delete">
+      <button
+        onClick={() => setDeleteConfirmId(row.id)}
+        className="w-7 h-7 rounded-lg flex items-center justify-center text-text-tertiary hover:text-negative hover:bg-negative/5 transition-all"
+        title="Delete"
+      >
         <Trash2 size={13} />
       </button>
     </div>
   )
 
   const stats = [
-    { label: 'Total Reports', value: reports.length, color: 'text-text-primary' },
-    { label: 'Published',     value: reports.filter(r => r.status === 'published').length,  color: 'text-positive' },
-    { label: 'Drafts',        value: reports.filter(r => r.status === 'draft').length,      color: 'text-warning' },
-    { label: 'Scheduled',     value: reports.filter(r => r.status === 'scheduled').length,  color: 'text-cyan' },
+    { label: 'Total Reports', value: reportList.length, color: 'text-text-primary' },
+    { label: 'Published',     value: reportList.filter(r => r.status === 'published').length,  color: 'text-positive' },
+    { label: 'Drafts',        value: reportList.filter(r => r.status === 'draft').length,      color: 'text-warning' },
+    { label: 'Scheduled',     value: reportList.filter(r => r.status === 'scheduled').length,  color: 'text-cyan' },
   ]
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-6">
+      {/* Error banner alert feedback */}
+      {errorBannerMsg && (
+        <AlertBanner
+          message={errorBannerMsg}
+          variant="danger"
+          onClose={() => setErrorBannerMsg(null)}
+        />
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <div className="flex-1">
           <Breadcrumbs crumbs={[{ label: 'Reports' }]} />
           <h1 className="font-display font-bold text-2xl text-text-primary mt-2">Reports</h1>
-          <p className="text-text-secondary text-sm font-mono mt-1">{reports.length} reports · {reports.filter(r => r.status === 'published').length} published</p>
+          <p className="text-text-secondary text-sm font-mono mt-1">{reportList.length} reports · {reportList.filter(r => r.status === 'published').length} published</p>
         </div>
         <div className="flex items-center gap-3">
           <ExportMenu />
@@ -347,7 +831,7 @@ export default function ReportsPage() {
       >
         <DataTable
           columns={columns}
-          data={reports}
+          data={reportList}
           searchPlaceholder="Search reports…"
           pageSize={8}
           actions={rowActions}
@@ -356,7 +840,36 @@ export default function ReportsPage() {
       </motion.div>
 
       {/* Report Builder Modal */}
-      <ReportBuilderModal open={builderOpen} onClose={() => setBuilderOpen(false)} />
+      <ReportBuilderModal
+        open={builderOpen}
+        onClose={() => {
+          setBuilderOpen(false)
+          setEditReport(null)
+        }}
+        onReportCreated={handleReportCreated}
+        onReportUpdated={handleReportUpdated}
+        editReport={editReport}
+      />
+
+      {/* View Report Modal */}
+      {viewReport && (
+        <ViewReportModal
+          open={!!viewReport}
+          onClose={() => setViewReport(null)}
+          report={viewReport}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <DeleteConfirmationModal
+          open={!!deleteConfirmId}
+          onClose={() => setDeleteConfirmId(null)}
+          onConfirm={() => handleDelete(deleteConfirmId)}
+          reportTitle={reportList.find(r => r.id === deleteConfirmId)?.title || 'Selected Report'}
+          isDeleting={isDeleting}
+        />
+      )}
     </div>
   )
 }
