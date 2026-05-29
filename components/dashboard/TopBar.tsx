@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Bell, Download, ChevronDown, Menu } from 'lucide-react'
+import { Search, Bell, Download, ChevronDown, Menu, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface TopBarProps {

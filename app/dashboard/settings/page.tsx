@@ -10,8 +10,32 @@ import { Badge } from '@/components/ui/Badge'
 import {
   Building2, Key, Puzzle, CreditCard, Bell,
   Copy, Check, RefreshCw, Eye, EyeOff,
-  CheckCircle2, Zap, Globe, Database, Mail as MailIcon, Slack
+  CheckCircle2, Zap, Globe, Database, Mail as MailIcon
 } from 'lucide-react'
+
+const Slack = ({ size = 18, className = "" }: { size?: number; className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <rect width="3" height="8" rx="1.5" x="13" y="2" />
+    <path d="M19 8.5V10h-1.5A1.5 1.5 0 1 1 19 8.5z" />
+    <rect width="8" height="3" rx="1.5" x="14" y="13" />
+    <path d="M15.5 19H14v-1.5a1.5 1.5 0 1 1 1.5 1.5z" />
+    <rect width="3" height="8" rx="1.5" x="8" y="14" />
+    <path d="M5 15.5V14h1.5A1.5 1.5 0 1 1 5 15.5z" />
+    <rect width="8" height="3" rx="1.5" x="2" y="8" />
+    <path d="M8.5 5H10v1.5A1.5 1.5 0 1 1 8.5 5z" />
+  </svg>
+)
 
 const TABS = [
   { id: 'general',       label: 'General' },
