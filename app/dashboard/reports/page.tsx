@@ -24,14 +24,14 @@ interface Report {
 
 // ── Mock data ───────────────────────────────────────────────────────
 const reports: Report[] = [
-  { id: 'r1', title: 'Q4 2024 Executive Summary',   type: 'revenue',  status: 'published', createdBy: 'Alex Kim',    updatedAt: '2h ago',    views: 142, widgets: 6 },
-  { id: 'r2', title: 'MRR Growth Analysis',          type: 'mrr',      status: 'published', createdBy: 'Sarah Chen',  updatedAt: '1d ago',    views: 89,  widgets: 4 },
-  { id: 'r3', title: 'Expense Breakdown — FY24',     type: 'expense',  status: 'published', createdBy: 'Alex Kim',    updatedAt: '3d ago',    views: 67,  widgets: 5 },
-  { id: 'r4', title: 'Annual Investor Report 2024',  type: 'custom',   status: 'draft',     createdBy: 'Sarah Chen',  updatedAt: '5d ago',    views: 12,  widgets: 8 },
-  { id: 'r5', title: 'Q1 2025 Forecast',             type: 'revenue',  status: 'scheduled', createdBy: 'Alex Kim',    updatedAt: '1w ago',    views: 0,   widgets: 5 },
-  { id: 'r6', title: 'Cashflow Statement — Dec',     type: 'expense',  status: 'published', createdBy: 'James Park',  updatedAt: '1w ago',    views: 44,  widgets: 3 },
-  { id: 'r7', title: 'Churn Analysis H2 2024',       type: 'mrr',      status: 'published', createdBy: 'Sarah Chen',  updatedAt: '2w ago',    views: 56,  widgets: 4 },
-  { id: 'r8', title: 'Board Deck — Feb 2025',        type: 'custom',   status: 'draft',     createdBy: 'Alex Kim',    updatedAt: '2w ago',    views: 3,   widgets: 10 },
+  { id: 'r1', title: 'Q4 2026 Executive Summary', type: 'revenue', status: 'published', createdBy: 'Alex Kim', updatedAt: '2h ago', views: 142, widgets: 6 },
+  { id: 'r2', title: 'MRR Growth Analysis', type: 'mrr', status: 'published', createdBy: 'Sarah Chen', updatedAt: '1d ago', views: 89, widgets: 4 },
+  { id: 'r3', title: 'Expense Breakdown — FY24', type: 'expense', status: 'published', createdBy: 'Alex Kim', updatedAt: '3d ago', views: 67, widgets: 5 },
+  { id: 'r4', title: 'Annual Investor Report 2026', type: 'custom', status: 'draft', createdBy: 'Sarah Chen', updatedAt: '5d ago', views: 12, widgets: 8 },
+  { id: 'r5', title: 'Q1 2025 Forecast', type: 'revenue', status: 'scheduled', createdBy: 'Alex Kim', updatedAt: '1w ago', views: 0, widgets: 5 },
+  { id: 'r6', title: 'Cashflow Statement — Dec', type: 'expense', status: 'published', createdBy: 'James Park', updatedAt: '1w ago', views: 44, widgets: 3 },
+  { id: 'r7', title: 'Churn Analysis H2 2026', type: 'mrr', status: 'published', createdBy: 'Sarah Chen', updatedAt: '2w ago', views: 56, widgets: 4 },
+  { id: 'r8', title: 'Board Deck — Feb 2025', type: 'custom', status: 'draft', createdBy: 'Alex Kim', updatedAt: '2w ago', views: 3, widgets: 10 },
 ]
 
 const typeIcon = { revenue: BarChart2, expense: PieChart, mrr: TrendingUp, custom: FileText } as const
@@ -40,23 +40,23 @@ import { TrendingUp } from 'lucide-react'
 const typeColors: Record<Report['type'], string> = {
   revenue: 'admin',
   expense: 'danger',
-  mrr:     'success',
-  custom:  'default',
+  mrr: 'success',
+  custom: 'default',
 }
 
 const statusVariants: Record<Report['status'], 'success' | 'warning' | 'info'> = {
-  published:  'success',
-  draft:      'warning',
-  scheduled:  'info',
+  published: 'success',
+  draft: 'warning',
+  scheduled: 'info',
 }
 
 // ── Report Builder Modal ────────────────────────────────────────────
 const CHART_TYPES = [
-  { id: 'area',   label: 'Area Chart',  icon: BarChart2 },
-  { id: 'bar',    label: 'Bar Chart',   icon: BarChart2 },
-  { id: 'donut',  label: 'Donut Chart', icon: PieChart },
-  { id: 'table',  label: 'Data Table',  icon: Table2 },
-  { id: 'kpi',    label: 'KPI Card',    icon: TrendingUp },
+  { id: 'area', label: 'Area Chart', icon: BarChart2 },
+  { id: 'bar', label: 'Bar Chart', icon: BarChart2 },
+  { id: 'donut', label: 'Donut Chart', icon: PieChart },
+  { id: 'table', label: 'Data Table', icon: Table2 },
+  { id: 'kpi', label: 'KPI Card', icon: TrendingUp },
 ]
 
 const METRICS = ['Revenue', 'MRR', 'ARR', 'Gross Profit', 'Net Profit', 'Churn Rate', 'DAU', 'Expenses']
@@ -74,11 +74,11 @@ function ReportBuilderModal({
   onReportUpdated?: (report: any) => void;
   editReport?: Report | null;
 }) {
-  const [title, setTitle]       = useState('')
-  const [chartType, setChart]   = useState('area')
-  const [metric, setMetric]     = useState('Revenue')
-  const [dateRange, setRange]   = useState('last_12_months')
-  const [step, setStep]         = useState(1)
+  const [title, setTitle] = useState('')
+  const [chartType, setChart] = useState('area')
+  const [metric, setMetric] = useState('Revenue')
+  const [dateRange, setRange] = useState('last_12_months')
+  const [step, setStep] = useState(1)
 
   useEffect(() => {
     if (editReport) {
@@ -145,11 +145,10 @@ function ReportBuilderModal({
         {[1, 2, 3].map(s => (
           <div key={s} className="flex items-center gap-2">
             <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-mono font-medium border transition-all ${
-                s <= step
+              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-mono font-medium border transition-all ${s <= step
                   ? 'bg-cyan/10 border-cyan/40 text-cyan'
                   : 'bg-elevated border-[var(--color-border)] text-text-tertiary'
-              }`}
+                }`}
             >
               {s}
             </div>
@@ -183,7 +182,7 @@ function ReportBuilderModal({
               <option value="last_3_months">Last 3 months</option>
               <option value="last_12_months">Last 12 months</option>
               <option value="ytd">Year to date</option>
-              <option value="fy_2024">Full Year 2024</option>
+              <option value="fy_2026">Full Year 2026</option>
               <option value="custom">Custom range</option>
             </select>
           </div>
@@ -199,11 +198,10 @@ function ReportBuilderModal({
                 <button
                   key={c.id}
                   onClick={() => setChart(c.id)}
-                  className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
-                    chartType === c.id
+                  className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${chartType === c.id
                       ? 'bg-cyan/10 border-cyan/30 text-cyan'
                       : 'bg-elevated border-[var(--color-border)] text-text-tertiary hover:border-cyan/20 hover:text-text-secondary'
-                  }`}
+                    }`}
                 >
                   <c.icon size={18} />
                   <span className="text-[10px] font-mono">{c.label.split(' ')[0]}</span>
@@ -218,11 +216,10 @@ function ReportBuilderModal({
                 <button
                   key={m}
                   onClick={() => setMetric(m)}
-                  className={`px-3 py-1.5 rounded-lg border text-xs font-mono transition-all ${
-                    metric === m
+                  className={`px-3 py-1.5 rounded-lg border text-xs font-mono transition-all ${metric === m
                       ? 'bg-cyan/10 border-cyan/30 text-cyan'
                       : 'bg-elevated border-[var(--color-border)] text-text-tertiary hover:text-text-secondary'
-                  }`}
+                    }`}
                 >
                   {m}
                 </button>
@@ -236,10 +233,10 @@ function ReportBuilderModal({
         <div className="space-y-4">
           <div className="bg-elevated rounded-xl p-5 border border-[var(--color-border)] space-y-3">
             {[
-              { label: 'Title',      value: title || '(untitled)' },
+              { label: 'Title', value: title || '(untitled)' },
               { label: 'Date Range', value: dateRange.replace(/_/g, ' ') },
               { label: 'Chart Type', value: chartType },
-              { label: 'Metric',     value: metric },
+              { label: 'Metric', value: metric },
             ].map(row => (
               <div key={row.label} className="flex items-center justify-between text-sm">
                 <span className="text-text-tertiary font-mono">{row.label}</span>
@@ -279,7 +276,7 @@ interface ViewReportModalProps {
 
 function ViewReportModal({ open, onClose, report }: ViewReportModalProps) {
   const [exporting, setExporting] = useState<string | null>(null)
-  
+
   if (!report) return null
 
   const getMockData = () => {
@@ -298,18 +295,18 @@ function ViewReportModal({ open, onClose, report }: ViewReportModalProps) {
   const svgHeight = 120
   const paddingX = 20
   const paddingY = 15
-  
+
   const minVal = Math.min(...mockValues) * 0.9
   const maxVal = Math.max(...mockValues) * 1.1
   const chartW = svgWidth - (paddingX * 2)
   const chartH = svgHeight - (paddingY * 2)
-  
+
   const points = mockValues.map((v, i) => {
     const x = paddingX + (i / (mockValues.length - 1)) * chartW
     const y = paddingY + chartH - ((v - minVal) / (maxVal - minVal)) * chartH
     return `${x},${y}`
   })
-  
+
   const pathD = points.length > 0 ? `M ${points.join(' L ')}` : ''
   const fillD = points.length > 0 ? `M ${paddingX},${paddingY + chartH} L ${points.join(' L ')} L ${paddingX + chartW},${paddingY + chartH} Z` : ''
 
@@ -522,7 +519,7 @@ function DeleteConfirmationModal({
 export default function ReportsPage() {
   const [builderOpen, setBuilderOpen] = useState(false)
   const [reportList, setReportList] = useState<Report[]>([])
-  
+
   // Dynamic state hooks for operational action flows
   const [viewReport, setViewReport] = useState<any | null>(null)
   const [editReport, setEditReport] = useState<any | null>(null)
@@ -775,9 +772,9 @@ export default function ReportsPage() {
 
   const stats = [
     { label: 'Total Reports', value: reportList.length, color: 'text-text-primary' },
-    { label: 'Published',     value: reportList.filter(r => r.status === 'published').length,  color: 'text-positive' },
-    { label: 'Drafts',        value: reportList.filter(r => r.status === 'draft').length,      color: 'text-warning' },
-    { label: 'Scheduled',     value: reportList.filter(r => r.status === 'scheduled').length,  color: 'text-cyan' },
+    { label: 'Published', value: reportList.filter(r => r.status === 'published').length, color: 'text-positive' },
+    { label: 'Drafts', value: reportList.filter(r => r.status === 'draft').length, color: 'text-warning' },
+    { label: 'Scheduled', value: reportList.filter(r => r.status === 'scheduled').length, color: 'text-cyan' },
   ]
 
   return (

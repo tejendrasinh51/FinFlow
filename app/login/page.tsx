@@ -9,19 +9,19 @@ import { Modal } from '@/components/ui/Modal'
 
 // Demo accounts for testing (no backend needed)
 const DEMO_ACCOUNTS = [
-  { email: 'admin@finflow.io',   password: 'Admin123!',   role: 'admin',   name: 'Alex Kim' },
+  { email: 'admin@finflow.io', password: 'Admin123!', role: 'admin', name: 'Alex Kim' },
   { email: 'analyst@finflow.io', password: 'Analyst123!', role: 'analyst', name: 'Sarah Chen' },
-  { email: 'viewer@finflow.io',  password: 'Viewer123!',  role: 'viewer',  name: 'James Park' },
+  { email: 'viewer@finflow.io', password: 'Viewer123!', role: 'viewer', name: 'James Park' },
 ]
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail]       = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
-  const [loading, setLoading]   = useState(false)
-  const [error, setError]       = useState('')
-  const [success, setSuccess]   = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
 
   // Parse URL query parameter safely on mount
   useEffect(() => {
@@ -200,7 +200,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-text-tertiary text-xs font-mono">
-          © 2024 FinFlow Analytics · Enterprise Financial Intelligence
+          © 2026 FinFlow Analytics · Enterprise Financial Intelligence
         </p>
       </div>
 
@@ -368,14 +368,14 @@ export default function LoginPage() {
                     className="text-[9px] font-mono px-1.5 py-0.5 rounded border capitalize"
                     style={{
                       color: account.role === 'admin' ? 'var(--color-cyan)' :
-                             account.role === 'analyst' ? 'var(--color-positive)' :
-                             'var(--color-text-tertiary)',
+                        account.role === 'analyst' ? 'var(--color-positive)' :
+                          'var(--color-text-tertiary)',
                       borderColor: account.role === 'admin' ? 'rgba(0,212,255,0.3)' :
-                                   account.role === 'analyst' ? 'rgba(16,185,129,0.3)' :
-                                   'var(--color-border)',
+                        account.role === 'analyst' ? 'rgba(16,185,129,0.3)' :
+                          'var(--color-border)',
                       background: account.role === 'admin' ? 'rgba(0,212,255,0.08)' :
-                                  account.role === 'analyst' ? 'rgba(16,185,129,0.08)' :
-                                  'transparent',
+                        account.role === 'analyst' ? 'rgba(16,185,129,0.08)' :
+                          'transparent',
                     }}
                   >
                     {account.role}

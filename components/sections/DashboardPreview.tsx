@@ -155,11 +155,10 @@ function DashboardInlineMockup() {
           {['Overview', 'Finance', 'Reports', 'Users', 'Settings'].map((item, i) => (
             <div
               key={item}
-              className={`px-3 py-2 rounded-lg text-xs font-mono cursor-pointer transition-colors ${
-                i === 0
+              className={`px-3 py-2 rounded-lg text-xs font-mono cursor-pointer transition-colors ${i === 0
                   ? 'bg-cyan/10 text-cyan border-l-2 border-cyan'
                   : 'text-text-tertiary hover:text-text-secondary hover:bg-elevated'
-              }`}
+                }`}
             >
               {item}
             </div>
@@ -181,7 +180,7 @@ function DashboardInlineMockup() {
                 <div className="text-text-primary font-mono font-medium text-base my-1">{m.value}</div>
                 <div className="text-positive text-[10px] font-mono">↑ {m.trend}</div>
                 <div className="mt-2 h-8 flex items-end gap-px">
-                  {[40,55,45,65,55,72,65,80,70,88,78,95,85,100].map((h, i) => (
+                  {[40, 55, 45, 65, 55, 72, 65, 80, 70, 88, 78, 95, 85, 100].map((h, i) => (
                     <div
                       key={i}
                       className="flex-1 rounded-sm"
@@ -203,7 +202,7 @@ function DashboardInlineMockup() {
             <div className="col-span-2 card p-4">
               <div className="text-text-secondary text-xs font-mono mb-3">Revenue — 12 Month Trend</div>
               <div className="h-36 flex items-end gap-1 relative">
-                {[28,32,38,35,45,42,55,58,62,70,75,88].map((h, i) => (
+                {[28, 32, 38, 35, 45, 42, 55, 58, 62, 70, 75, 88].map((h, i) => (
                   <div key={i} className="flex-1 flex flex-col justify-end relative">
                     <div
                       className="rounded-t-sm w-full"
@@ -217,7 +216,7 @@ function DashboardInlineMockup() {
                 {/* Trend line */}
                 <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
                   <polyline
-                    points={[28,32,38,35,45,42,55,58,62,70,75,88].map((h, i, arr) =>
+                    points={[28, 32, 38, 35, 45, 42, 55, 58, 62, 70, 75, 88].map((h, i, arr) =>
                       `${(i / (arr.length - 1)) * 100},${100 - h}`
                     ).join(' ')}
                     fill="none"
@@ -260,7 +259,7 @@ function DashboardInlineMockup() {
 
           {/* P&L table */}
           <div className="card p-4">
-            <div className="text-text-secondary text-xs font-mono mb-3">P&L Summary — Q4 2024</div>
+            <div className="text-text-secondary text-xs font-mono mb-3">P&L Summary — Q4 2026</div>
             <table className="w-full text-xs font-mono">
               <thead>
                 <tr className="border-b border-[var(--color-border)]">

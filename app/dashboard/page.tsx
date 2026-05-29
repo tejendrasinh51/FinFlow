@@ -113,10 +113,10 @@ export default function DashboardPage() {
   const { liveValues, isLive, isLoading: metricsLoading } = useMetrics({
     types: ['mrr', 'arr', 'churn', 'dau'],
   })
-  
+
   const [loading, setLoading] = useState(true)
   const [updatedMetric, setUpdatedMetric] = useState<number | null>(null)
-  
+
   // Custom controls state
   const [rangeOpen, setRangeOpen] = useState(false)
   const [selectedRange, setSelectedRange] = useState('Last 12 months')
@@ -127,7 +127,7 @@ export default function DashboardPage() {
     profit: true,
   })
   const [isRefreshing, setIsRefreshing] = useState(false)
-  
+
   const controlsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -184,7 +184,7 @@ export default function DashboardPage() {
     }
     const key = typeMap[m.title]
     const liveValue = liveValues[key]
-    
+
     let formattedVal = m.value
     if (liveValue !== undefined) {
       if (key === 'churn') {
@@ -197,7 +197,7 @@ export default function DashboardPage() {
         formattedVal = Math.round(liveValue).toLocaleString()
       }
     }
-    
+
     return {
       ...m,
       value: formattedVal,
@@ -378,7 +378,7 @@ export default function DashboardPage() {
                 axisLine={false} tickLine={false}
               />
               <YAxis
-                tickFormatter={(v) => `$${(v/1000).toFixed(0)}K`}
+                tickFormatter={(v) => `$${(v / 1000).toFixed(0)}K`}
                 tick={{ fill: '#3A4A5C', fontSize: 10, fontFamily: 'JetBrains Mono' }}
                 axisLine={false} tickLine={false}
               />
@@ -461,7 +461,7 @@ export default function DashboardPage() {
             <div className="text-text-secondary text-xs font-mono uppercase tracking-wider mb-1">
               Financial Summary
             </div>
-            <div className="font-display font-semibold text-lg">P&L Statement — Q4 2024</div>
+            <div className="font-display font-semibold text-lg">P&L Statement — Q4 2026</div>
           </div>
           <button className="btn-ghost text-sm py-2 px-4">
             Export →
@@ -472,9 +472,9 @@ export default function DashboardPage() {
             <thead>
               <tr className="border-b border-[var(--color-border)]">
                 <th className="data-table-header text-left py-3 pr-8">Line Item</th>
-                <th className="data-table-header text-right py-3 px-4">Oct 2024</th>
-                <th className="data-table-header text-right py-3 px-4">Nov 2024</th>
-                <th className="data-table-header text-right py-3 px-4">Dec 2024</th>
+                <th className="data-table-header text-right py-3 px-4">Oct 2026</th>
+                <th className="data-table-header text-right py-3 px-4">Nov 2026</th>
+                <th className="data-table-header text-right py-3 px-4">Dec 2026</th>
                 <th className="data-table-header text-right py-3 pl-4">Q4 Total</th>
               </tr>
             </thead>
@@ -491,22 +491,20 @@ export default function DashboardPage() {
                     className={`data-table-row transition-colors ${isProfit ? 'bg-cyan/[0.03]' : ''}`}
                   >
                     <td
-                      className={`py-3 pr-8 ${
-                        isProfit ? 'text-cyan font-medium' :
-                        isGross ? 'text-text-primary' :
-                        'text-text-secondary'
-                      }`}
+                      className={`py-3 pr-8 ${isProfit ? 'text-cyan font-medium' :
+                          isGross ? 'text-text-primary' :
+                            'text-text-secondary'
+                        }`}
                     >
                       {row.item}
                     </td>
                     {[row.oct, row.nov, row.dec, q4].map((v, i) => (
                       <td
                         key={i}
-                        className={`py-3 px-4 text-right ${
-                          isProfit ? 'text-positive font-medium' :
-                          isNeg ? 'text-negative' :
-                          'text-text-primary'
-                        }`}
+                        className={`py-3 px-4 text-right ${isProfit ? 'text-positive font-medium' :
+                            isNeg ? 'text-negative' :
+                              'text-text-primary'
+                          }`}
                       >
                         {fmt(v)}
                       </td>

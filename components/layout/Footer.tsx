@@ -95,7 +95,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="mt-16 pt-8 border-t border-[var(--color-border)] flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-text-tertiary text-sm font-mono">
-            © 2024 FinFlow Analytics. All rights reserved.
+            © 2026 FinFlow Analytics. All rights reserved.
           </p>
           <div className="flex items-center gap-2">
             <span className="live-dot"></span>

@@ -10,37 +10,37 @@ import { AlertBanner } from '@/components/ui/AlertBanner'
 import { Plus, MoreHorizontal, Mail, Shield, UserX, UserCheck, ChevronDown } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────────────
-type Role   = 'admin' | 'analyst' | 'viewer'
+type Role = 'admin' | 'analyst' | 'viewer'
 type Status = 'active' | 'inactive' | 'pending'
 
 interface User {
-  id:        string
-  name:      string
-  email:     string
-  role:      Role
-  status:    Status
+  id: string
+  name: string
+  email: string
+  role: Role
+  status: Status
   lastLogin: string
-  joinDate:  string
-  org:       string
+  joinDate: string
+  org: string
 }
 
 // ── Mock data ─────────────────────────────────────────────────────────
 const initialUsers: User[] = [
-  { id: 'u1', name: 'Alex Kim',      email: 'admin@finflow.io',    role: 'admin',   status: 'active',   lastLogin: '2m ago',    joinDate: 'Jan 12, 2024', org: 'Payflow Tech' },
-  { id: 'u2', name: 'Sarah Chen',    email: 'analyst@finflow.io',  role: 'analyst', status: 'active',   lastLogin: '1h ago',    joinDate: 'Feb 5, 2024',  org: 'Payflow Tech' },
-  { id: 'u3', name: 'James Park',    email: 'viewer@finflow.io',   role: 'viewer',  status: 'active',   lastLogin: '3h ago',    joinDate: 'Mar 18, 2024', org: 'Payflow Tech' },
-  { id: 'u4', name: 'Priya Sharma',  email: 'p.sharma@payflow.io', role: 'analyst', status: 'active',   lastLogin: '1d ago',    joinDate: 'Apr 2, 2024',  org: 'Payflow Tech' },
-  { id: 'u5', name: 'Carlos Rivera', email: 'c.rivera@payflow.io', role: 'viewer',  status: 'pending',  lastLogin: 'Never',     joinDate: 'May 14, 2024', org: 'Payflow Tech' },
-  { id: 'u6', name: 'Yuki Tanaka',   email: 'y.tanaka@payflow.io', role: 'viewer',  status: 'inactive', lastLogin: '2w ago',    joinDate: 'Jan 30, 2024', org: 'Payflow Tech' },
-  { id: 'u7', name: 'Omar Hassan',   email: 'o.hassan@payflow.io', role: 'analyst', status: 'active',   lastLogin: '30m ago',   joinDate: 'Jun 8, 2024',  org: 'Payflow Tech' },
-  { id: 'u8', name: 'Mei Zhou',      email: 'm.zhou@payflow.io',   role: 'viewer',  status: 'active',   lastLogin: '2d ago',    joinDate: 'Jul 22, 2024', org: 'Payflow Tech' },
+  { id: 'u1', name: 'Alex Kim', email: 'admin@finflow.io', role: 'admin', status: 'active', lastLogin: '2m ago', joinDate: 'Jan 12, 2026', org: 'Payflow Tech' },
+  { id: 'u2', name: 'Sarah Chen', email: 'analyst@finflow.io', role: 'analyst', status: 'active', lastLogin: '1h ago', joinDate: 'Feb 5, 2026', org: 'Payflow Tech' },
+  { id: 'u3', name: 'James Park', email: 'viewer@finflow.io', role: 'viewer', status: 'active', lastLogin: '3h ago', joinDate: 'Mar 18, 2026', org: 'Payflow Tech' },
+  { id: 'u4', name: 'Priya Sharma', email: 'p.sharma@payflow.io', role: 'analyst', status: 'active', lastLogin: '1d ago', joinDate: 'Apr 2, 2026', org: 'Payflow Tech' },
+  { id: 'u5', name: 'Carlos Rivera', email: 'c.rivera@payflow.io', role: 'viewer', status: 'pending', lastLogin: 'Never', joinDate: 'May 14, 2026', org: 'Payflow Tech' },
+  { id: 'u6', name: 'Yuki Tanaka', email: 'y.tanaka@payflow.io', role: 'viewer', status: 'inactive', lastLogin: '2w ago', joinDate: 'Jan 30, 2026', org: 'Payflow Tech' },
+  { id: 'u7', name: 'Omar Hassan', email: 'o.hassan@payflow.io', role: 'analyst', status: 'active', lastLogin: '30m ago', joinDate: 'Jun 8, 2026', org: 'Payflow Tech' },
+  { id: 'u8', name: 'Mei Zhou', email: 'm.zhou@payflow.io', role: 'viewer', status: 'active', lastLogin: '2d ago', joinDate: 'Jul 22, 2026', org: 'Payflow Tech' },
 ]
 
 // ── Invite Modal ──────────────────────────────────────────────────────
 function InviteModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [email, setEmail] = useState('')
-  const [role,  setRole]  = useState<Role>('viewer')
-  const [sent,  setSent]  = useState(false)
+  const [role, setRole] = useState<Role>('viewer')
+  const [sent, setSent] = useState(false)
 
   const handleInvite = async () => {
     setSent(true)
@@ -71,22 +71,21 @@ function InviteModal({ open, onClose }: { open: boolean; onClose: () => void }) 
               <button
                 key={r}
                 onClick={() => setRole(r)}
-                className={`py-2.5 rounded-lg border text-xs font-mono capitalize transition-all ${
-                  role === r
-                    ? r === 'admin'   ? 'bg-cyan/10 border-cyan/30 text-cyan'
-                    : r === 'analyst' ? 'bg-positive/10 border-positive/30 text-positive'
-                    :                   'bg-elevated border-[var(--color-border-strong)] text-text-primary'
+                className={`py-2.5 rounded-lg border text-xs font-mono capitalize transition-all ${role === r
+                    ? r === 'admin' ? 'bg-cyan/10 border-cyan/30 text-cyan'
+                      : r === 'analyst' ? 'bg-positive/10 border-positive/30 text-positive'
+                        : 'bg-elevated border-[var(--color-border-strong)] text-text-primary'
                     : 'bg-elevated border-[var(--color-border)] text-text-tertiary hover:text-text-secondary'
-                }`}
+                  }`}
               >
                 {r}
               </button>
             ))}
           </div>
           <p className="text-text-tertiary text-[10px] font-mono mt-2">
-            {role === 'admin'   ? 'Full access — manage users, settings, and all data' :
-             role === 'analyst' ? 'Can view and create reports, export data' :
-             'Read-only access to dashboards and published reports'}
+            {role === 'admin' ? 'Full access — manage users, settings, and all data' :
+              role === 'analyst' ? 'Can view and create reports, export data' :
+                'Read-only access to dashboards and published reports'}
           </p>
         </div>
         <div className="pt-2">
@@ -144,7 +143,7 @@ function RoleDropdown({ user, onChange }: { user: User; onChange: (role: Role) =
 
 // ── Main page ─────────────────────────────────────────────────────────
 export default function UsersPage() {
-  const [users, setUsers]       = useState<User[]>(initialUsers)
+  const [users, setUsers] = useState<User[]>(initialUsers)
   const [inviteOpen, setInvite] = useState(false)
 
   const handleRoleChange = (userId: string, role: Role) => {
@@ -217,11 +216,10 @@ export default function UsersPage() {
     <div className="flex items-center gap-1 justify-end">
       <button
         onClick={() => handleToggleStatus(row.id)}
-        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-          row.status === 'active'
+        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${row.status === 'active'
             ? 'text-text-tertiary hover:text-negative hover:bg-negative/5'
             : 'text-text-tertiary hover:text-positive hover:bg-positive/5'
-        }`}
+          }`}
         title={row.status === 'active' ? 'Deactivate' : 'Activate'}
       >
         {row.status === 'active' ? <UserX size={13} /> : <UserCheck size={13} />}
@@ -232,9 +230,9 @@ export default function UsersPage() {
     </div>
   )
 
-  const active   = users.filter(u => u.status === 'active').length
-  const pending  = users.filter(u => u.status === 'pending').length
-  const admins   = users.filter(u => u.role === 'admin').length
+  const active = users.filter(u => u.status === 'active').length
+  const pending = users.filter(u => u.status === 'pending').length
+  const admins = users.filter(u => u.role === 'admin').length
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-6">
@@ -256,17 +254,17 @@ export default function UsersPage() {
           type="info"
           title={`${pending} pending invitation${pending > 1 ? 's' : ''}`}
           message="Some team members haven't accepted their invitations yet."
-          action={{ label: 'Resend all invites', onClick: () => {} }}
+          action={{ label: 'Resend all invites', onClick: () => { } }}
         />
       )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total Members', value: users.length,                                             color: 'text-text-primary' },
-          { label: 'Active',        value: active,                                                   color: 'text-positive' },
-          { label: 'Pending',       value: pending,                                                  color: 'text-warning' },
-          { label: 'Admins',        value: admins,                                                   color: 'text-cyan' },
+          { label: 'Total Members', value: users.length, color: 'text-text-primary' },
+          { label: 'Active', value: active, color: 'text-positive' },
+          { label: 'Pending', value: pending, color: 'text-warning' },
+          { label: 'Admins', value: admins, color: 'text-cyan' },
         ].map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }} className="card p-4 text-center">
             <div className={`font-mono font-bold text-2xl ${s.color}`}>{s.value}</div>
@@ -279,7 +277,7 @@ export default function UsersPage() {
       <div className="grid grid-cols-3 gap-3">
         {(['admin', 'analyst', 'viewer'] as Role[]).map(role => {
           const count = users.filter(u => u.role === role).length
-          const pct   = Math.round((count / users.length) * 100)
+          const pct = Math.round((count / users.length) * 100)
           return (
             <div key={role} className="card p-4">
               <div className="flex items-center justify-between mb-3">

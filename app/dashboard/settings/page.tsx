@@ -38,18 +38,18 @@ const Slack = ({ size = 18, className = "" }: { size?: number; className?: strin
 )
 
 const TABS = [
-  { id: 'general',       label: 'General' },
-  { id: 'api',           label: 'API Keys' },
-  { id: 'integrations',  label: 'Integrations' },
-  { id: 'billing',       label: 'Billing' },
+  { id: 'general', label: 'General' },
+  { id: 'api', label: 'API Keys' },
+  { id: 'integrations', label: 'Integrations' },
+  { id: 'billing', label: 'Billing' },
   { id: 'notifications', label: 'Notifications' },
 ]
 
 // ── General ──────────────────────────────────────────────────────────
 function GeneralTab() {
   const [orgName, setOrgName] = useState('Payflow Technologies')
-  const [domain,  setDomain]  = useState('payflow.io')
-  const [saved,   setSaved]   = useState(false)
+  const [domain, setDomain] = useState('payflow.io')
+  const [saved, setSaved] = useState(false)
 
   const handleSave = async () => {
     await new Promise(r => setTimeout(r, 600))
@@ -63,7 +63,7 @@ function GeneralTab() {
         <h3 className="font-display font-semibold text-lg">Organisation Details</h3>
         {[
           { label: 'Organisation Name', value: orgName, onChange: setOrgName, placeholder: 'Acme Corp' },
-          { label: 'Primary Domain',    value: domain,  onChange: setDomain,  placeholder: 'company.io' },
+          { label: 'Primary Domain', value: domain, onChange: setDomain, placeholder: 'company.io' },
         ].map(field => (
           <div key={field.label}>
             <label className="block text-text-secondary text-xs font-mono uppercase tracking-wider mb-2">{field.label}</label>
@@ -116,9 +116,9 @@ function ApiTab() {
   const [revealed, setRevealed] = useState<string | null>(null)
 
   const keys = [
-    { id: 'k1', name: 'Production API Key', key: 'ff_live_sk_Kx9mN2pQ8vRt3wLjA5bZ7cHn',  env: 'live',    created: 'Jan 12, 2024', lastUsed: '2m ago' },
-    { id: 'k2', name: 'Test API Key',        key: 'ff_test_sk_Yz4nP6qS1uXd8eGk0mJv2bTr', env: 'test',    created: 'Jan 12, 2024', lastUsed: '3d ago' },
-    { id: 'k3', name: 'Webhook Secret',      key: 'whsec_Mn5pQ2rT8vLk0bZj6cHn9wAx',     env: 'webhook', created: 'Feb 5, 2024',  lastUsed: '1h ago' },
+    { id: 'k1', name: 'Production API Key', key: 'ff_live_sk_Kx9mN2pQ8vRt3wLjA5bZ7cHn', env: 'live', created: 'Jan 12, 2026', lastUsed: '2m ago' },
+    { id: 'k2', name: 'Test API Key', key: 'ff_test_sk_Yz4nP6qS1uXd8eGk0mJv2bTr', env: 'test', created: 'Jan 12, 2026', lastUsed: '3d ago' },
+    { id: 'k3', name: 'Webhook Secret', key: 'whsec_Mn5pQ2rT8vLk0bZj6cHn9wAx', env: 'webhook', created: 'Feb 5, 2026', lastUsed: '1h ago' },
   ]
 
   const maskKey = (k: string) => k.slice(0, 12) + '•'.repeat(20) + k.slice(-4)
@@ -191,12 +191,12 @@ function ApiTab() {
 
 // ── Integrations ──────────────────────────────────────────────────────
 const integrations = [
-  { name: 'Slack',         desc: 'Send metric alerts and report summaries to Slack channels', icon: Slack,     connected: true,  plan: 'all' },
-  { name: 'Stripe',        desc: 'Sync payment data, MRR, and subscription metrics', icon: Zap,      connected: true,  plan: 'all' },
-  { name: 'HubSpot CRM',   desc: 'Unify customer revenue data with your CRM pipeline', icon: Globe,    connected: false, plan: 'growth+' },
-  { name: 'PostgreSQL',    desc: 'Connect your own PostgreSQL instance as a data source', icon: Database, connected: true,  plan: 'enterprise' },
-  { name: 'SendGrid',      desc: 'Deliver scheduled reports via transactional email', icon: MailIcon, connected: false, plan: 'all' },
-  { name: 'Zapier',        desc: 'Automate workflows with 3,000+ app connections', icon: Zap,      connected: false, plan: 'growth+' },
+  { name: 'Slack', desc: 'Send metric alerts and report summaries to Slack channels', icon: Slack, connected: true, plan: 'all' },
+  { name: 'Stripe', desc: 'Sync payment data, MRR, and subscription metrics', icon: Zap, connected: true, plan: 'all' },
+  { name: 'HubSpot CRM', desc: 'Unify customer revenue data with your CRM pipeline', icon: Globe, connected: false, plan: 'growth+' },
+  { name: 'PostgreSQL', desc: 'Connect your own PostgreSQL instance as a data source', icon: Database, connected: true, plan: 'enterprise' },
+  { name: 'SendGrid', desc: 'Deliver scheduled reports via transactional email', icon: MailIcon, connected: false, plan: 'all' },
+  { name: 'Zapier', desc: 'Automate workflows with 3,000+ app connections', icon: Zap, connected: false, plan: 'growth+' },
 ]
 
 function IntegrationsTab() {
@@ -243,10 +243,10 @@ function IntegrationsTab() {
 // ── Billing ───────────────────────────────────────────────────────────
 function BillingTab() {
   const usage = [
-    { label: 'API Requests',       value: 84200,  max: 100000, suffix: ' req', color: 'var(--color-cyan)' },
-    { label: 'Team Members',       value: 8,       max: 25,     suffix: ' users', color: 'var(--color-positive)' },
-    { label: 'Storage',            value: 12.4,    max: 50,     suffix: ' GB',  color: 'var(--color-warning)' },
-    { label: 'Exports this month', value: 47,      max: 200,    suffix: ' files', color: 'var(--color-cyan)' },
+    { label: 'API Requests', value: 84200, max: 100000, suffix: ' req', color: 'var(--color-cyan)' },
+    { label: 'Team Members', value: 8, max: 25, suffix: ' users', color: 'var(--color-positive)' },
+    { label: 'Storage', value: 12.4, max: 50, suffix: ' GB', color: 'var(--color-warning)' },
+    { label: 'Exports this month', value: 47, max: 200, suffix: ' files', color: 'var(--color-cyan)' },
   ]
 
   return (
@@ -301,21 +301,27 @@ function BillingTab() {
 
 // ── Notifications ─────────────────────────────────────────────────────
 const notifSettings = [
-  { group: 'Metric Alerts',   items: [
-    { id: 'churn_spike',     label: 'Churn spike',           desc: 'When churn exceeds threshold' },
-    { id: 'mrr_milestone',   label: 'MRR milestone',         desc: 'On reaching MRR targets' },
-    { id: 'low_cashflow',    label: 'Low cashflow warning',  desc: 'When net cashflow drops below 20%' },
-  ]},
-  { group: 'Reports',         items: [
-    { id: 'report_ready',    label: 'Export ready',          desc: 'When an export job completes' },
-    { id: 'report_shared',   label: 'Report shared',         desc: 'When someone shares a report with you' },
-    { id: 'scheduled_sent',  label: 'Scheduled report sent', desc: 'Confirmation after delivery' },
-  ]},
-  { group: 'Team & Security', items: [
-    { id: 'new_login',       label: 'New sign-in',           desc: 'Alert on new device login' },
-    { id: 'invite_accepted', label: 'Invite accepted',       desc: 'When a pending invite is accepted' },
-    { id: 'role_changed',    label: 'Role changed',          desc: 'When a user role is modified' },
-  ]},
+  {
+    group: 'Metric Alerts', items: [
+      { id: 'churn_spike', label: 'Churn spike', desc: 'When churn exceeds threshold' },
+      { id: 'mrr_milestone', label: 'MRR milestone', desc: 'On reaching MRR targets' },
+      { id: 'low_cashflow', label: 'Low cashflow warning', desc: 'When net cashflow drops below 20%' },
+    ]
+  },
+  {
+    group: 'Reports', items: [
+      { id: 'report_ready', label: 'Export ready', desc: 'When an export job completes' },
+      { id: 'report_shared', label: 'Report shared', desc: 'When someone shares a report with you' },
+      { id: 'scheduled_sent', label: 'Scheduled report sent', desc: 'Confirmation after delivery' },
+    ]
+  },
+  {
+    group: 'Team & Security', items: [
+      { id: 'new_login', label: 'New sign-in', desc: 'Alert on new device login' },
+      { id: 'invite_accepted', label: 'Invite accepted', desc: 'When a pending invite is accepted' },
+      { id: 'role_changed', label: 'Role changed', desc: 'When a user role is modified' },
+    ]
+  },
 ]
 
 function NotificationsTab() {
@@ -374,10 +380,10 @@ export default function SettingsPage() {
 
       {/* Content */}
       <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-        {tab === 'general'       && <GeneralTab />}
-        {tab === 'api'           && <ApiTab />}
-        {tab === 'integrations'  && <IntegrationsTab />}
-        {tab === 'billing'       && <BillingTab />}
+        {tab === 'general' && <GeneralTab />}
+        {tab === 'api' && <ApiTab />}
+        {tab === 'integrations' && <IntegrationsTab />}
+        {tab === 'billing' && <BillingTab />}
         {tab === 'notifications' && <NotificationsTab />}
       </motion.div>
     </div>
