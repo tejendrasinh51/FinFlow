@@ -1,4 +1,12 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+  experimental: {
+    optimizePackageImports: ['recharts', 'framer-motion', '@tanstack/react-table', 'lucide-react'],
+  },
+  images: {
+    domains: [],
+    formats: ['image/avif', 'image/webp'],
+  },
+}
 
-export default nextConfig;
+export default nextConfig
