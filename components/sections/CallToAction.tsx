@@ -3,6 +3,7 @@
 import { FadeIn } from '@/components/motion/FadeIn'
 import { motion } from 'framer-motion'
 import { ArrowRight, CheckCircle } from 'lucide-react'
+import Link from 'next/link'
 
 const benefits = [
   'Full-featured sandbox — no credit card required',
@@ -50,21 +51,19 @@ export function CallToAction() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-            <motion.a
-              href="#contact"
+            <motion.div
               whileHover={{ scale: 1.03, boxShadow: '0 0 30px rgba(0,212,255,0.4)' }}
               whileTap={{ scale: 0.98 }}
-              className="btn-primary text-lg py-4 px-10"
             >
-              Request a Demo <ArrowRight size={20} />
-            </motion.a>
-            <motion.a
-              href="#pricing"
-              whileHover={{ scale: 1.02 }}
-              className="btn-secondary text-lg py-4 px-10"
-            >
-              View Pricing
-            </motion.a>
+              <Link href="/onboarding" className="btn-primary text-lg py-4 px-10 inline-flex items-center gap-2">
+                Request a Demo <ArrowRight size={20} />
+              </Link>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.02 }}>
+              <Link href="/pricing" className="btn-secondary text-lg py-4 px-10 inline-flex items-center gap-2">
+                View Pricing
+              </Link>
+            </motion.div>
           </div>
 
           {/* Benefits list */}

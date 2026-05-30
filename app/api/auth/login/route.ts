@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { query, transaction } from '@/lib/db/client';
 import { createSession } from '@/lib/auth/session';
 
+export const dynamic = 'force-dynamic';
+
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),

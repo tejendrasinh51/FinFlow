@@ -6,9 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, TrendingUp } from 'lucide-react'
 
 const navLinks = [
-  { href: '#platform', label: 'Platform' },
-  { href: '#features', label: 'Features' },
-  { href: '#results', label: 'Results' },
+  { href: '#platform', label: 'Platform', isRoute: false },
+  { href: '#features', label: 'Features', isRoute: false },
+  { href: '#results', label: 'Results', isRoute: false },
   { href: '/pricing', label: 'Pricing', isRoute: true },
 ]
 
@@ -22,6 +22,18 @@ export function Navbar() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  const handleAnchorClick = (href: string) => {
+    setActiveLink(href)
+    setMobileOpen(false)
+    // Smooth scroll for anchor links on same page
+    if (href.startsWith('#')) {
+      const el = document.querySelector(href)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }
+  }
 
   return (
     <>
@@ -61,7 +73,10 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={`nav-link ${activeLink === link.href ? 'active' : ''}`}
-                  onClick={() => setActiveLink(link.href)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    handleAnchorClick(link.href)
+                  }}
                 >
                   {link.label}
                 </a>
@@ -74,7 +89,11 @@ export function Navbar() {
             <Link href="/login" className="btn-ghost text-sm py-2 px-4">
               Login
             </Link>
-            <a href="#demo" className="btn-primary text-sm py-2 px-5">
+            <a
+              href="#demo"
+              onClick={(e) => { e.preventDefault(); handleAnchorClick('#demo') }}
+              className="btn-primary text-sm py-2 px-5"
+            >
               Get Demo →
             </a>
           </div>
@@ -101,18 +120,38 @@ export function Navbar() {
           >
             <nav className="flex flex-col p-6 gap-4">
               {navLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="text-text-secondary hover:text-text-primary py-2 border-b border-[var(--color-border)] last:border-0"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {link.label}
-                </a>
+                link.isRoute ? (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="text-text-secondary hover:text-text-primary py-2 border-b border-[var(--color-border)] last:border-0"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className="text-text-secondary hover:text-text-primary py-2 border-b border-[var(--color-border)] last:border-0"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleAnchorClick(link.href)
+                    }}
+                  >
+                    {link.label}
+                  </a>
+                )
               ))}
               <div className="flex flex-col gap-3 pt-2">
                 <Link href="/login" className="btn-ghost text-sm text-center" onClick={() => setMobileOpen(false)}>Login</Link>
-                <a href="#demo" className="btn-primary text-sm text-center justify-center">Get Demo →</a>
+                <a
+                  href="#demo"
+                  className="btn-primary text-sm text-center justify-center"
+                  onClick={(e) => { e.preventDefault(); handleAnchorClick('#demo') }}
+                >
+                  Get Demo →
+                </a>
               </div>
             </nav>
           </motion.div>

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { verifyJwt, revokeSession } from '@/lib/auth/session';
 import { query } from '@/lib/db/client';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const sessionToken = request.headers.get('cookie')

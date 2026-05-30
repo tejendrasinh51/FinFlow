@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { pool } from '@/lib/db/client';
 
+export const dynamic = 'force-dynamic';
+
 const reportCreateSchema = z.object({
   title: z.string().min(2).max(255),
   config: z.record(z.any()).default({}),

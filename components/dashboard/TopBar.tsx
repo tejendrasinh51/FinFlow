@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 interface TopBarProps {
   onMenuToggle?: () => void
+  sidebarOpen?: boolean
 }
 
 const notifications = [
@@ -15,7 +16,7 @@ const notifications = [
   { type: 'warning', title: 'Churn spike detected', desc: 'Churn up 0.4pp vs last week', time: '1h ago' },
 ]
 
-export function TopBar({ onMenuToggle }: TopBarProps) {
+export function TopBar({ onMenuToggle, sidebarOpen }: TopBarProps) {
   const router = useRouter()
   const [notifOpen, setNotifOpen] = useState(false)
   const [userOpen, setUserOpen] = useState(false)
@@ -30,6 +31,7 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
   const [exporting, setExporting] = useState<'pdf' | 'excel' | 'csv' | null>(null)
   
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const notifRef = useRef<HTMLDivElement>(null)
   const exportRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
@@ -73,6 +75,9 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setUserOpen(false)
+      }
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setNotifOpen(false)
       }
       if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
         setExportOpen(false)
@@ -209,15 +214,16 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
       {/* Mobile menu toggle */}
       <button
         onClick={onMenuToggle}
-        className="lg:hidden text-text-secondary hover:text-text-primary"
+        className="flex-shrink-0 w-9 h-9 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-text-secondary hover:text-text-primary hover:border-cyan/30 transition-all bg-elevated/40 lg:hidden"
+        aria-label="Toggle menu"
       >
-        <Menu size={20} />
+        <Menu size={18} />
       </button>
 
-      {/* Global Interactive Command Palette Search trigger */}
+      {/* Global Interactive Command Palette Search trigger — hidden on mobile */}
       <div 
         onClick={() => setPaletteOpen(true)}
-        className="relative flex-1 max-w-sm cursor-pointer group"
+        className="relative flex-1 max-w-sm cursor-pointer group hidden sm:flex"
       >
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary group-hover:text-cyan transition-colors" />
         <div className="w-full pl-9 pr-12 py-2 bg-elevated border border-[var(--color-border)] group-hover:border-cyan/30 rounded-lg text-sm text-text-tertiary font-mono transition-all text-left">
@@ -242,13 +248,13 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                Compiling…
+                <span className="hidden sm:inline">Compiling…</span>
               </>
             ) : (
               <>
                 <Download size={14} className="text-cyan" />
-                <span>Export Center</span>
-                <ChevronDown size={12} className={`text-text-tertiary transition-transform ${exportOpen ? 'rotate-180' : ''}`} />
+                <span className="hidden md:inline">Export Center</span>
+                <ChevronDown size={12} className={`text-text-tertiary transition-transform ${exportOpen ? 'rotate-180' : ''} hidden md:block`} />
               </>
             )}
           </button>
@@ -289,12 +295,15 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
         </div>
 
         {/* Notifications */}
-        <div className="relative">
+        <div className="relative" ref={notifRef}>
           <button
             onClick={() => setNotifOpen(!notifOpen)}
             className="relative w-9 h-9 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-text-secondary hover:text-text-primary hover:border-cyan/30 transition-all bg-elevated/40"
           >
             <Bell size={16} />
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-cyan text-canvas text-[9px] font-mono font-bold flex items-center justify-center">
+              {notifications.length}
+            </span>
           </button>
 
           <AnimatePresence>
@@ -430,7 +439,7 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -20, scale: 0.96 }}
               transition={{ duration: 0.2 }}
-              className="relative w-full max-w-xl card shadow-cyan-xl border border-cyan/20 overflow-hidden bg-surface max-h-[480px] flex flex-col"
+              className="relative w-full max-w-xl mx-4 card shadow-cyan-xl border border-cyan/20 overflow-hidden bg-surface max-h-[480px] flex flex-col"
             >
               {/* Search bar inside palette */}
               <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--color-border)] flex-shrink-0">

@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import {
   LayoutDashboard, TrendingUp, FileText, Users, Settings,
-  ChevronRight, ChevronDown, DollarSign, BarChart2, Activity
+  ChevronRight, ChevronDown, DollarSign, BarChart2, Activity, X
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -27,6 +27,7 @@ const navItems: NavItem[] = [
       { label: 'Cashflow', href: '/dashboard/finance/cashflow', icon: Activity },
     ],
   },
+  { icon: Activity, label: 'Analytics', href: '/dashboard/analytics' },
   { icon: FileText, label: 'Reports', href: '/dashboard/reports' },
   { icon: Users, label: 'Users', href: '/dashboard/users', adminOnly: true },
   { icon: Settings, label: 'Settings', href: '/dashboard/settings', adminOnly: true },
@@ -35,10 +36,11 @@ const navItems: NavItem[] = [
 interface SidebarProps {
   collapsed: boolean
   onToggle: () => void
+  onClose?: () => void
   currentRole?: 'admin' | 'analyst' | 'viewer'
 }
 
-export function Sidebar({ collapsed, onToggle, currentRole: propRole }: SidebarProps) {
+export function Sidebar({ collapsed, onToggle, onClose, currentRole: propRole }: SidebarProps) {
   const pathname = usePathname()
   const [expandedItem, setExpandedItem] = useState<string | null>('/dashboard/finance')
   const [session, setSession] = useState<{ name: string; role: 'admin' | 'analyst' | 'viewer' } | null>(null)
@@ -74,22 +76,37 @@ export function Sidebar({ collapsed, onToggle, currentRole: propRole }: SidebarP
       .toUpperCase()
   }
 
+  const handleNavClick = () => {
+    // Close sidebar on mobile after navigation
+    onClose?.()
+  }
+
   return (
     <motion.aside
       animate={{ width: collapsed ? 60 : 240 }}
       transition={{ duration: 0.2, ease: 'easeInOut' }}
       className="relative flex-shrink-0 h-full border-r border-[var(--color-border)] bg-surface flex flex-col overflow-hidden"
     >
-      {/* Logo */}
+      {/* Logo + mobile close button */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-[var(--color-border)]">
         <div className="w-8 h-8 rounded-lg bg-cyan/10 border border-cyan/30 flex items-center justify-center flex-shrink-0">
           <TrendingUp size={15} className="text-cyan" />
         </div>
         {!collapsed && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="overflow-hidden">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="overflow-hidden flex-1">
             <div className="font-display font-bold text-sm leading-none">FINFLOW</div>
             <div className="font-mono text-text-tertiary text-[10px] mt-0.5">Analytics</div>
           </motion.div>
+        )}
+        {/* Mobile close button */}
+        {!collapsed && onClose && (
+          <button
+            onClick={onClose}
+            className="lg:hidden w-7 h-7 rounded-md flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-elevated transition-all flex-shrink-0"
+            aria-label="Close sidebar"
+          >
+            <X size={15} />
+          </button>
         )}
       </div>
 
@@ -118,7 +135,13 @@ export function Sidebar({ collapsed, onToggle, currentRole: propRole }: SidebarP
                 <Link
                   href={hasChildren ? '#' : item.href}
                   className="flex items-center gap-3 flex-1 animate-none text-decoration-none"
-                  onClick={e => hasChildren && e.preventDefault()}
+                  onClick={e => {
+                    if (hasChildren) {
+                      e.preventDefault()
+                    } else {
+                      handleNavClick()
+                    }
+                  }}
                 >
                   <item.icon size={17} className="flex-shrink-0" />
                   {!collapsed && <span className="truncate flex-1">{item.label}</span>}
@@ -148,6 +171,7 @@ export function Sidebar({ collapsed, onToggle, currentRole: propRole }: SidebarP
                     <Link
                       key={child.href}
                       href={child.href}
+                      onClick={handleNavClick}
                       className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all ${
                         pathname === child.href
                           ? 'text-cyan bg-cyan/5'
@@ -182,10 +206,10 @@ export function Sidebar({ collapsed, onToggle, currentRole: propRole }: SidebarP
         </div>
       </div>
 
-      {/* Toggle */}
+      {/* Collapse Toggle — desktop only */}
       <button
         onClick={onToggle}
-        className="absolute top-5 -right-3 w-6 h-6 rounded-full bg-elevated border border-[var(--color-border)] flex items-center justify-center text-text-tertiary hover:text-cyan hover:border-cyan/40 transition-all z-10"
+        className="hidden lg:flex absolute top-5 -right-3 w-6 h-6 rounded-full bg-elevated border border-[var(--color-border)] items-center justify-center text-text-tertiary hover:text-cyan hover:border-cyan/40 transition-all z-10"
       >
         <ChevronRight size={12} className={`transition-transform ${collapsed ? '' : 'rotate-180'}`} />
       </button>

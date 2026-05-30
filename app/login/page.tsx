@@ -263,9 +263,13 @@ export default function LoginPage() {
                 >
                   Password
                 </label>
-                <a href="#" className="text-cyan text-xs hover:underline">
+                <button
+                  type="button"
+                  onClick={() => alert('To reset your password, contact your workspace administrator or email support@finflow.io')}
+                  className="text-cyan text-xs hover:underline bg-transparent border-0 p-0 cursor-pointer font-mono"
+                >
                   Forgot password?
-                </a>
+                </button>
               </div>
               <div className="relative">
                 <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary" />

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import { redis } from '@/lib/redis/client';
+
+export const dynamic = 'force-dynamic';
 import { pool } from '@/lib/db/client';
 import { hasPermission } from '@/lib/auth/rbac';
 import { generateCsv } from '@/lib/export/csv';

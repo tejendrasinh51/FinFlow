@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { Badge } from '@/components/ui/Badge'
 import { DataTable, Column } from '@/components/ui/DataTable'
 import { Modal } from '@/components/ui/Modal'
 import { AlertBanner } from '@/components/ui/AlertBanner'
-import { Plus, MoreHorizontal, Mail, Shield, UserX, UserCheck, ChevronDown } from 'lucide-react'
+import { Plus, Mail, Shield, UserX, UserCheck, ChevronDown } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────────────
 type Role = 'admin' | 'analyst' | 'viewer'
@@ -115,8 +115,18 @@ function InviteModal({ open, onClose }: { open: boolean; onClose: () => void }) 
 // ── Role change dropdown ──────────────────────────────────────────────
 function RoleDropdown({ user, onChange }: { user: User; onChange: (role: Role) => void }) {
   const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    if (open) document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
   return (
-    <div className="relative">
+    <div className="relative" ref={ref}>
       <button
         onClick={e => { e.stopPropagation(); setOpen(!open) }}
         className="flex items-center gap-1"
@@ -216,17 +226,22 @@ export default function UsersPage() {
     <div className="flex items-center gap-1 justify-end">
       <button
         onClick={() => handleToggleStatus(row.id)}
-        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${row.status === 'active'
+        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+          row.status === 'active'
             ? 'text-text-tertiary hover:text-negative hover:bg-negative/5'
             : 'text-text-tertiary hover:text-positive hover:bg-positive/5'
-          }`}
-        title={row.status === 'active' ? 'Deactivate' : 'Activate'}
+        }`}
+        title={row.status === 'active' ? 'Deactivate user' : 'Activate user'}
       >
         {row.status === 'active' ? <UserX size={13} /> : <UserCheck size={13} />}
       </button>
-      <button className="w-7 h-7 rounded-lg flex items-center justify-center text-text-tertiary hover:text-cyan hover:bg-cyan/5 transition-all" title="Send email">
+      <a
+        href={`mailto:${row.email}`}
+        className="w-7 h-7 rounded-lg flex items-center justify-center text-text-tertiary hover:text-cyan hover:bg-cyan/5 transition-all"
+        title={`Send email to ${row.email}`}
+      >
         <Mail size={13} />
-      </button>
+      </a>
     </div>
   )
 

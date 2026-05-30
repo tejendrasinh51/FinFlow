@@ -41,13 +41,26 @@ let redisInstance: any;
 
 if (redisUrl) {
   try {
-    redisInstance = new Redis(redisUrl, {
+    const redisOptions: any = {
       maxRetriesPerRequest: 3,
-      retryStrategy(times) {
+      retryStrategy(times: number) {
         const delay = Math.min(times * 100, 3000);
         return delay;
       },
-    });
+    };
+
+    if (redisUrl.startsWith('rediss://')) {
+      try {
+        const parsedUrl = new URL(redisUrl);
+        redisOptions.tls = {
+          servername: parsedUrl.hostname,
+        };
+      } catch (e) {
+        console.error('Failed to parse REDIS_URL for TLS servername:', e);
+      }
+    }
+
+    redisInstance = new Redis(redisUrl, redisOptions);
 
     redisInstance.on('error', (err: any) => {
       console.error('Redis error encountered:', err);

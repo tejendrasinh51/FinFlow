@@ -4,6 +4,11 @@ import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { ArrowRight, Play } from 'lucide-react'
 
+function scrollToSection(id: string) {
+  const el = document.getElementById(id.replace('#', ''))
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
 function LiveBadge() {
   const [count, setCount] = useState(10247)
 
@@ -82,10 +87,18 @@ export function Hero() {
           transition={{ delay: 0.65, duration: 0.6 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-4"
         >
-          <a href="#demo" className="btn-primary text-base py-3 px-8">
+          <a
+            href="#demo"
+            onClick={(e) => { e.preventDefault(); scrollToSection('#demo') }}
+            className="btn-primary text-base py-3 px-8"
+          >
             Request Demo <ArrowRight size={18} />
           </a>
-          <a href="#case-study" className="btn-secondary text-base py-3 px-8">
+          <a
+            href="#results"
+            onClick={(e) => { e.preventDefault(); scrollToSection('#results') }}
+            className="btn-secondary text-base py-3 px-8"
+          >
             <Play size={16} />
             View Case Study ↓
           </a>

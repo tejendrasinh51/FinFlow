@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/Badge'
 import {
   Building2, Key, Puzzle, CreditCard, Bell,
   Copy, Check, RefreshCw, Eye, EyeOff,
-  CheckCircle2, Zap, Globe, Database, Mail as MailIcon
+  CheckCircle2, Zap, Globe, Database, Mail as MailIcon, Trash2, Download, AlertTriangle, Plus
 } from 'lucide-react'
 
 const Slack = ({ size = 18, className = "" }: { size?: number; className?: string }) => (
@@ -50,11 +50,45 @@ function GeneralTab() {
   const [orgName, setOrgName] = useState('Payflow Technologies')
   const [domain, setDomain] = useState('payflow.io')
   const [saved, setSaved] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [exportDone, setExportDone] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteInput, setDeleteInput] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   const handleSave = async () => {
     await new Promise(r => setTimeout(r, 600))
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
+  }
+
+  const handleExportData = async () => {
+    setExporting(true)
+    try {
+      const res = await fetch('/api/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ format: 'csv', title: 'Organisation Data Archive' }),
+      })
+      if (res.ok) {
+        setExportDone(true)
+        setTimeout(() => setExportDone(false), 3000)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (deleteInput !== orgName) return
+    setDeleting(true)
+    await new Promise(r => setTimeout(r, 1500))
+    setDeleting(false)
+    setShowDeleteConfirm(false)
+    // In a real app, this would log the user out after deleting
+    alert('Organisation deleted. In a production app, you would be logged out.')
   }
 
   return (
@@ -92,18 +126,66 @@ function GeneralTab() {
       <div className="card p-6 border-negative/20">
         <h3 className="font-display font-semibold text-lg text-negative mb-4">Danger Zone</h3>
         <div className="space-y-3">
-          {[
-            { label: 'Export all data', desc: 'Download a complete archive of your organisation\'s data', btn: 'Export', btnClass: 'btn-ghost' },
-            { label: 'Delete organisation', desc: 'Permanently delete this organisation and all associated data', btn: 'Delete', btnClass: 'bg-negative/10 border border-negative/30 text-negative hover:bg-negative/20 btn-ghost' },
-          ].map(item => (
-            <div key={item.label} className="flex items-center justify-between p-4 bg-negative/[0.03] border border-negative/10 rounded-xl">
-              <div>
-                <div className="text-text-primary text-sm font-medium">{item.label}</div>
-                <div className="text-text-tertiary text-xs mt-0.5 max-w-sm">{item.desc}</div>
-              </div>
-              <button className={`${item.btnClass} text-sm py-1.5 px-4 ml-4 flex-shrink-0`}>{item.btn}</button>
+          {/* Export all data */}
+          <div className="flex items-center justify-between p-4 bg-negative/[0.03] border border-negative/10 rounded-xl">
+            <div>
+              <div className="text-text-primary text-sm font-medium">Export all data</div>
+              <div className="text-text-tertiary text-xs mt-0.5 max-w-sm">Download a complete archive of your organisation's data</div>
             </div>
-          ))}
+            <button
+              onClick={handleExportData}
+              disabled={exporting}
+              className="btn-ghost text-sm py-1.5 px-4 ml-4 flex-shrink-0 flex items-center gap-2 disabled:opacity-50"
+            >
+              {exporting ? (
+                <><svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> Exporting…</>
+              ) : exportDone ? (
+                <><CheckCircle2 size={14} className="text-positive" /> Done!</>
+              ) : 'Export'}
+            </button>
+          </div>
+
+          {/* Delete organisation */}
+          <div className="flex items-center justify-between p-4 bg-negative/[0.03] border border-negative/10 rounded-xl">
+            <div>
+              <div className="text-text-primary text-sm font-medium">Delete organisation</div>
+              <div className="text-text-tertiary text-xs mt-0.5 max-w-sm">Permanently delete this organisation and all associated data</div>
+            </div>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="bg-negative/10 border border-negative/30 text-negative hover:bg-negative/20 btn-ghost text-sm py-1.5 px-4 ml-4 flex-shrink-0"
+            >
+              Delete
+            </button>
+          </div>
+
+          {/* Confirm Delete Dialog */}
+          {showDeleteConfirm && (
+            <div className="p-4 bg-negative/5 border border-negative/20 rounded-xl space-y-3">
+              <div className="text-negative text-xs font-medium">⚠ This action is irreversible. Type your organisation name to confirm deletion:</div>
+              <div className="font-mono text-xs text-text-tertiary">Type: <span className="text-text-primary">{orgName}</span></div>
+              <input
+                value={deleteInput}
+                onChange={e => setDeleteInput(e.target.value)}
+                placeholder={orgName}
+                className="w-full px-3 py-2 bg-elevated border border-negative/30 rounded-lg text-text-primary font-mono text-sm focus:outline-none focus:border-negative/60 transition-all"
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDelete}
+                  disabled={deleteInput !== orgName || deleting}
+                  className="btn-ghost text-xs py-2 px-4 bg-negative/10 border border-negative/30 text-negative hover:bg-negative/20 disabled:opacity-40 flex items-center gap-2"
+                >
+                  {deleting ? (
+                    <><svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> Deleting…</>
+                  ) : 'Confirm Delete'}
+                </button>
+                <button onClick={() => { setShowDeleteConfirm(false); setDeleteInput('') }} className="btn-ghost text-xs py-2 px-4">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -114,12 +196,13 @@ function GeneralTab() {
 function ApiTab() {
   const [copied, setCopied] = useState<string | null>(null)
   const [revealed, setRevealed] = useState<string | null>(null)
-
-  const keys = [
+  const [rotating, setRotating] = useState<string | null>(null)
+  const [generating, setGenerating] = useState(false)
+  const [keys, setKeys] = useState([
     { id: 'k1', name: 'Production API Key', key: 'ff_live_sk_Kx9mN2pQ8vRt3wLjA5bZ7cHn', env: 'live', created: 'Jan 12, 2026', lastUsed: '2m ago' },
     { id: 'k2', name: 'Test API Key', key: 'ff_test_sk_Yz4nP6qS1uXd8eGk0mJv2bTr', env: 'test', created: 'Jan 12, 2026', lastUsed: '3d ago' },
     { id: 'k3', name: 'Webhook Secret', key: 'whsec_Mn5pQ2rT8vLk0bZj6cHn9wAx', env: 'webhook', created: 'Feb 5, 2026', lastUsed: '1h ago' },
-  ]
+  ])
 
   const maskKey = (k: string) => k.slice(0, 12) + '•'.repeat(20) + k.slice(-4)
 
@@ -127,6 +210,28 @@ function ApiTab() {
     navigator.clipboard.writeText(key)
     setCopied(id)
     setTimeout(() => setCopied(null), 2000)
+  }
+
+  const handleRotate = async (id: string) => {
+    if (!confirm('Rotating this key will invalidate the existing key immediately. Applications using it will need to be updated. Proceed?')) return
+    setRotating(id)
+    await new Promise(r => setTimeout(r, 1000))
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    const newSuffix = Array.from({ length: 24 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+    setKeys(prev => prev.map(k => k.id === id ? { ...k, key: k.key.slice(0, 8) + newSuffix, lastUsed: 'Just now' } : k))
+    setRotating(null)
+  }
+
+  const handleGenerateKey = async () => {
+    const name = prompt('Enter a name for the new API key:')
+    if (!name) return
+    setGenerating(true)
+    await new Promise(r => setTimeout(r, 800))
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    const newKey = 'ff_test_sk_' + Array.from({ length: 24 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+    const newId = 'k' + Date.now()
+    setKeys(prev => [...prev, { id: newId, name, key: newKey, env: 'test', created: 'Today', lastUsed: 'Never' }])
+    setGenerating(false)
   }
 
   return (
@@ -139,8 +244,16 @@ function ApiTab() {
       <div className="card p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-display font-semibold text-lg">API Keys</h3>
-          <button className="btn-primary text-sm py-2 px-4 flex items-center gap-2">
-            <Key size={13} /> Generate Key
+          <button
+            onClick={handleGenerateKey}
+            disabled={generating}
+            className="btn-primary text-sm py-2 px-4 flex items-center gap-2 disabled:opacity-50"
+          >
+            {generating ? (
+              <><svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> Generating…</>
+            ) : (
+              <><Key size={13} /> Generate Key</>
+            )}
           </button>
         </div>
         <div className="space-y-3">
@@ -161,17 +274,24 @@ function ApiTab() {
                     <button
                       onClick={() => setRevealed(revealed === k.id ? null : k.id)}
                       className="w-7 h-7 rounded-lg flex items-center justify-center text-text-tertiary hover:text-text-secondary hover:bg-canvas transition-all"
+                      title={revealed === k.id ? 'Hide key' : 'Reveal key'}
                     >
                       {revealed === k.id ? <EyeOff size={13} /> : <Eye size={13} />}
                     </button>
                     <button
                       onClick={() => handleCopy(k.id, k.key)}
                       className="w-7 h-7 rounded-lg flex items-center justify-center text-text-tertiary hover:text-cyan hover:bg-cyan/5 transition-all"
+                      title="Copy to clipboard"
                     >
                       {copied === k.id ? <Check size={13} className="text-positive" /> : <Copy size={13} />}
                     </button>
-                    <button className="w-7 h-7 rounded-lg flex items-center justify-center text-text-tertiary hover:text-warning hover:bg-warning/5 transition-all" title="Rotate">
-                      <RefreshCw size={13} />
+                    <button
+                      onClick={() => handleRotate(k.id)}
+                      disabled={rotating === k.id}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-text-tertiary hover:text-warning hover:bg-warning/5 transition-all disabled:opacity-50"
+                      title="Rotate key"
+                    >
+                      <RefreshCw size={13} className={rotating === k.id ? 'animate-spin' : ''} />
                     </button>
                   </div>
                   <div className="flex gap-4 mt-2 text-[10px] font-mono text-text-tertiary">
@@ -242,6 +362,8 @@ function IntegrationsTab() {
 
 // ── Billing ───────────────────────────────────────────────────────────
 function BillingTab() {
+  const [billingMsg, setBillingMsg] = useState<string | null>(null)
+
   const usage = [
     { label: 'API Requests', value: 84200, max: 100000, suffix: ' req', color: 'var(--color-cyan)' },
     { label: 'Team Members', value: 8, max: 25, suffix: ' users', color: 'var(--color-positive)' },
@@ -251,6 +373,14 @@ function BillingTab() {
 
   return (
     <div className="space-y-6 max-w-2xl">
+      {billingMsg && (
+        <AlertBanner
+          type="info"
+          title="Billing Portal"
+          message={billingMsg}
+          onDismiss={() => setBillingMsg(null)}
+        />
+      )}
       {/* Current plan */}
       <div className="card p-6 relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan to-transparent" />
@@ -275,8 +405,19 @@ function BillingTab() {
           ))}
         </div>
         <div className="mt-4 flex gap-3">
-          <button className="btn-ghost text-sm py-2 px-4">Manage billing</button>
-          <button className="btn-ghost text-sm py-2 px-4">View invoices</button>
+          <button
+            onClick={() => setBillingMsg('In a production environment, this would open the Stripe billing portal. Your subscription is managed via Stripe Customer Portal.')
+            }
+            className="btn-ghost text-sm py-2 px-4"
+          >
+            Manage billing
+          </button>
+          <button
+            onClick={() => setBillingMsg('Your invoice history: Dec 2026 — $2,400 (Paid), Nov 2026 — $2,400 (Paid), Oct 2026 — $2,400 (Paid). PDF invoices sent to billing@payflow.io.')}
+            className="btn-ghost text-sm py-2 px-4"
+          >
+            View invoices
+          </button>
         </div>
       </div>
 

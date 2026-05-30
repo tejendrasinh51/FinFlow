@@ -3,6 +3,8 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { pool } from '@/lib/db/client';
 
+export const dynamic = 'force-dynamic';
+
 const userInviteSchema = z.object({
   email: z.string().email(),
   role: z.enum(['admin', 'analyst', 'viewer']),

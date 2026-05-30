@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db/client';
 import { redis } from '@/lib/redis/client';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const healthStatus: any = {
     status: 'healthy',

@@ -56,10 +56,32 @@ if (dbUrl) {
 }
 
 // 2. Establish separate Redis Publisher and Subscriber
-const redisPub = redisUrl ? new Redis(redisUrl) : null;
-const redisSub = redisUrl ? new Redis(redisUrl) : null;
+const wsRedisOptions: any = {};
+if (redisUrl && redisUrl.startsWith('rediss://')) {
+  try {
+    const parsedUrl = new URL(redisUrl);
+    wsRedisOptions.tls = {
+      servername: parsedUrl.hostname,
+    };
+  } catch (e) {
+    console.error('Failed to parse REDIS_URL for WebSocket Redis:', e);
+  }
+}
+
+const redisPub = redisUrl ? new Redis(redisUrl, wsRedisOptions) : null;
+const redisSub = redisUrl ? new Redis(redisUrl, wsRedisOptions) : null;
+
+if (redisPub) {
+  redisPub.on('error', (err) => {
+    console.error('WebSocket Redis Publisher error:', err);
+  });
+}
 
 if (redisSub) {
+  redisSub.on('error', (err) => {
+    console.error('WebSocket Redis Subscriber error:', err);
+  });
+
   // Subscribe to all org channels
   redisSub.psubscribe('channel:metrics:*').then(() => {
     console.log('Redis subscriber listening on channel:metrics:*');
