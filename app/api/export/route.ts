@@ -62,98 +62,96 @@ export async function POST(request: Request) {
 
     await redis.set(jobKey, JSON.stringify(jobData), 'EX', 86400); // Retain tracking state for 24 hours
 
-    // 2. Launch Background Exporter Process
-    setImmediate(async () => {
+    // 2. Execute Exporter Process Synchronously for Serverless environments
+    try {
+      console.log(`[Export Job ${jobId}] Commencing compilation: ${format}`);
+      
+      // Update state to processing
+      jobData.status = 'processing';
+      jobData.progress = 10;
+      await redis.set(jobKey, JSON.stringify(jobData), 'EX', 86400);
+
+      // Fetch metrics data from database using RLS isolation
+      const fromDate = filters?.from ? new Date(filters.from) : new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+      const toDate = filters?.to ? new Date(filters.to) : new Date();
+      const types = filters?.types || ['mrr', 'arr', 'churn', 'dau', 'revenue', 'expense', 'profit'];
+
+      const client = await pool.connect();
+      let dbRows: any[] = [];
       try {
-        console.log(`[Export Job ${jobId}] Commencing background compilation: ${format}`);
-        
-        // Update state to processing
-        jobData.status = 'processing';
-        jobData.progress = 10;
-        await redis.set(jobKey, JSON.stringify(jobData), 'EX', 86400);
-
-        // Fetch metrics data from database using RLS isolation
-        const fromDate = filters?.from ? new Date(filters.from) : new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
-        const toDate = filters?.to ? new Date(filters.to) : new Date();
-        const types = filters?.types || ['mrr', 'arr', 'churn', 'dau', 'revenue', 'expense', 'profit'];
-
-        const client = await pool.connect();
-        let dbRows: any[] = [];
-        try {
-          await client.query('BEGIN');
-          await client.query(`SELECT set_config('app.current_org_id', $1, true)`, [orgId]);
-          const queryRes = await client.query(
-            `SELECT metric_type, value, recorded_at 
-             FROM financial_metrics
-             WHERE metric_type = ANY($1) AND recorded_at BETWEEN $2 AND $3
-             ORDER BY recorded_at DESC`,
-            [types, fromDate, toDate]
-          );
-          dbRows = queryRes.rows;
-          await client.query('COMMIT');
-        } catch (dbErr) {
-          await client.query('ROLLBACK');
-          throw dbErr;
-        } finally {
-          client.release();
-        }
-
-        jobData.progress = 40;
-        await redis.set(jobKey, JSON.stringify(jobData), 'EX', 86400);
-
-        // Fetch User Email for dispatch
-        const userRes = await pool.query(`SELECT email FROM users WHERE id = $1`, [userId]);
-        const emailAddress = userRes.rows[0]?.email || 'reports@finflow.io';
-
-        // 3. Compile Buffer based on Format
-        let buffer: Buffer;
-        let contentType: string;
-        let ext: string;
-
-        if (format === 'csv') {
-          buffer = await generateCsv(dbRows);
-          contentType = 'text/csv';
-          ext = 'csv';
-        } else if (format === 'excel') {
-          buffer = await generateExcel(dbRows, title);
-          contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-          ext = 'xlsx';
-        } else {
-          // PDF Report
-          const htmlContent = compileReportHtml(title, dbRows);
-          buffer = await generateReportPdf(htmlContent);
-          contentType = 'application/pdf';
-          ext = 'pdf';
-        }
-
-        jobData.progress = 70;
-        await redis.set(jobKey, JSON.stringify(jobData), 'EX', 86400);
-
-        // 4. Upload generated buffer to S3 / Local storage
-        const filename = `${title.toLowerCase().replace(/[^a-z0-9]/g, '-')}.${ext}`;
-        const { signedUrl } = await uploadExport(buffer, filename, contentType);
-
-        jobData.progress = 90;
-        await redis.set(jobKey, JSON.stringify(jobData), 'EX', 86400);
-
-        // 5. Dispatch confirmation email with download link
-        await sendExportEmail(emailAddress, signedUrl, title, format);
-
-        // 6. Complete Job Record
-        jobData.status = 'done';
-        jobData.progress = 100;
-        jobData.url = signedUrl as any;
-        await redis.set(jobKey, JSON.stringify(jobData), 'EX', 86400);
-        
-        console.log(`[Export Job ${jobId}] Export compilation completed successfully.`);
-      } catch (err: any) {
-        console.error(`[Export Job ${jobId}] Execution failed:`, err);
-        jobData.status = 'error';
-        await redis.set(jobKey, JSON.stringify(jobData), 'EX', 86400);
+        await client.query('BEGIN');
+        await client.query(`SELECT set_config('app.current_org_id', $1, true)`, [orgId]);
+        const queryRes = await client.query(
+          `SELECT metric_type, value, recorded_at 
+           FROM financial_metrics
+           WHERE metric_type = ANY($1) AND recorded_at BETWEEN $2 AND $3
+           ORDER BY recorded_at DESC`,
+          [types, fromDate, toDate]
+        );
+        dbRows = queryRes.rows;
+        await client.query('COMMIT');
+      } catch (dbErr) {
+        await client.query('ROLLBACK');
+        throw dbErr;
+      } finally {
+        client.release();
       }
-    });
 
-    return NextResponse.json({ success: true, jobId }, { status: 202 });
+      jobData.progress = 40;
+      await redis.set(jobKey, JSON.stringify(jobData), 'EX', 86400);
+
+      // Fetch User Email for dispatch
+      const userRes = await pool.query(`SELECT email FROM users WHERE id = $1`, [userId]);
+      const emailAddress = userRes.rows[0]?.email || 'reports@finflow.io';
+
+      // 3. Compile Buffer based on Format
+      let buffer: Buffer;
+      let contentType: string;
+      let ext: string;
+
+      if (format === 'csv') {
+        buffer = await generateCsv(dbRows);
+        contentType = 'text/csv';
+        ext = 'csv';
+      } else if (format === 'excel') {
+        buffer = await generateExcel(dbRows, title);
+        contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        ext = 'xlsx';
+      } else {
+        // PDF Report
+        const htmlContent = compileReportHtml(title, dbRows);
+        buffer = await generateReportPdf(htmlContent);
+        contentType = 'application/pdf';
+        ext = 'pdf';
+      }
+
+      jobData.progress = 70;
+      await redis.set(jobKey, JSON.stringify(jobData), 'EX', 86400);
+
+      // 4. Upload generated buffer to S3 / Local storage
+      const filename = `${title.toLowerCase().replace(/[^a-z0-9]/g, '-')}.${ext}`;
+      const { signedUrl } = await uploadExport(buffer, filename, contentType);
+
+      jobData.progress = 90;
+      await redis.set(jobKey, JSON.stringify(jobData), 'EX', 86400);
+
+      // 5. Dispatch confirmation email with download link
+      await sendExportEmail(emailAddress, signedUrl, title, format);
+
+      // 6. Complete Job Record
+      jobData.status = 'done';
+      jobData.progress = 100;
+      jobData.url = signedUrl as any;
+      await redis.set(jobKey, JSON.stringify(jobData), 'EX', 86400);
+      
+      console.log(`[Export Job ${jobId}] Export compilation completed successfully.`);
+      return NextResponse.json({ success: true, jobId, url: signedUrl }, { status: 200 });
+    } catch (err: any) {
+      console.error(`[Export Job ${jobId}] Execution failed:`, err);
+      jobData.status = 'error';
+      await redis.set(jobKey, JSON.stringify(jobData), 'EX', 86400);
+      return NextResponse.json({ success: false, error: 'Export failed' }, { status: 500 });
+    }
   } catch (error) {
     console.error('Export API error:', error);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
