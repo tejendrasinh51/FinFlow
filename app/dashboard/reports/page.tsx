@@ -528,11 +528,27 @@ function ViewReportModal({ open, onClose, report }: ViewReportModalProps) {
 
   const handleExport = async (format: 'pdf' | 'excel') => {
     setExporting(format)
+    
+    // Infer the specific metric to filter based on the report configuration
+    const metricLabel = (report.config?.metric || report.type || 'revenue').toLowerCase();
+    let metricType = 'revenue';
+    if (metricLabel.includes('expense')) metricType = 'expense';
+    else if (metricLabel.includes('mrr')) metricType = 'mrr';
+    else if (metricLabel.includes('arr')) metricType = 'arr';
+    else if (metricLabel.includes('churn')) metricType = 'churn';
+    else if (metricLabel.includes('dau')) metricType = 'dau';
+    else if (metricLabel.includes('profit')) metricType = 'profit';
+
     try {
       const res = await fetch('/api/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ format, title: report.title, reportId: report.id })
+        body: JSON.stringify({ 
+          format, 
+          title: report.title, 
+          reportId: report.id,
+          filters: { types: [metricType] }
+        })
       });
       if (res.ok) {
         const data = await res.json();
