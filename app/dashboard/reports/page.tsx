@@ -556,7 +556,6 @@ function ViewReportModal({ open, onClose, report }: ViewReportModalProps) {
           const a = document.createElement('a');
           a.href = data.url;
           a.setAttribute('download', `${report.title.toLowerCase().replace(/[^a-z0-9]/g, '-')}.${format === 'excel' ? 'xlsx' : 'pdf'}`);
-          a.target = '_blank';
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);

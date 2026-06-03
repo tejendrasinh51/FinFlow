@@ -13,7 +13,7 @@ import { uploadExport } from '@/lib/aws/s3';
 import { sendExportEmail } from '@/lib/aws/ses';
 
 const exportRequestSchema = z.object({
-  reportId: z.string().uuid().optional(),
+  reportId: z.string().optional(),
   format: z.enum(['pdf', 'csv', 'excel']),
   title: z.string().default('Financial Report'),
   filters: z.object({
