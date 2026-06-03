@@ -94,6 +94,6 @@ export async function sendExportEmail(
     
     console.log(`[SES Simulation] Export email logged locally. Check: ${mailFile}`);
   } catch (err) {
-    console.error('Failed to log simulated email outbox:', err);
+    console.warn('Failed to log simulated email outbox (likely read-only filesystem). Skipping local mail log.', err);
   }
 }

@@ -58,7 +58,11 @@ export async function uploadExport(
   }
 
   // ── Local Filesystem Fallback ──────────────────────
+  let localUrl = '';
   try {
+    const base64Data = buffer.toString('base64');
+    localUrl = `data:${contentType};base64,${base64Data}`;
+
     const exportsDir = path.join(process.cwd(), 'public', 'exports');
     
     // Ensure public/exports directory exists
@@ -68,17 +72,16 @@ export async function uploadExport(
 
     const filePath = path.join(exportsDir, uniqueName);
     fs.writeFileSync(filePath, buffer);
-    
-    // Return self-contained base64 data URL to completely bypass Next.js static asset caching latency in local dev mode
-    const base64Data = buffer.toString('base64');
-    const localUrl = `data:${contentType};base64,${base64Data}`;
     console.log(`Successfully stored export locally at public/exports/${uniqueName} and generated base64 download stream.`);
-    
-    return { key: uniqueName, signedUrl: localUrl };
   } catch (err) {
-    console.error('Local export storage failed:', err);
-    throw new Error('Failed to save generated export.');
+    console.warn('Local export storage to public/exports failed (likely read-only filesystem). Proceeding with base64 stream anyway.', err);
   }
+
+  if (!localUrl) {
+    throw new Error('Failed to save or encode generated export.');
+  }
+
+  return { key: uniqueName, signedUrl: localUrl };
 }
 
 /**
