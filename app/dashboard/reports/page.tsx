@@ -528,18 +528,35 @@ function ViewReportModal({ open, onClose, report }: ViewReportModalProps) {
 
   const handleExport = async (format: 'pdf' | 'excel') => {
     setExporting(format)
-    // Simulate generation
-    await new Promise(r => setTimeout(r, 1200))
-    setExporting(null)
-    
-    // Simulate download
-    const dummyUrl = '#'
-    const a = document.createElement('a')
-    a.href = dummyUrl
-    a.setAttribute('download', `${report.title.toLowerCase().replace(/[^a-z0-9]/g, '-')}.${format === 'excel' ? 'xlsx' : 'pdf'}`)
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
+    try {
+      const res = await fetch('/api/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ format, title: report.title, reportId: report.id })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.url) {
+          const a = document.createElement('a');
+          a.href = data.url;
+          a.setAttribute('download', `${report.title.toLowerCase().replace(/[^a-z0-9]/g, '-')}.${format === 'excel' ? 'xlsx' : 'pdf'}`);
+          a.target = '_blank';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        } else {
+          alert(data.error || 'Export failed.');
+        }
+      } else {
+        const err = await res.json().catch(() => null);
+        alert(err?.error || 'Failed to generate export.');
+      }
+    } catch (err) {
+      console.error('Export error:', err);
+      alert('An error occurred during export.');
+    } finally {
+      setExporting(null);
+    }
   }
 
   return (
